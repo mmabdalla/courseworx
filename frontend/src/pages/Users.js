@@ -6,7 +6,6 @@ import {
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
