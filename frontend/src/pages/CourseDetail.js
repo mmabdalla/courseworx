@@ -8,9 +8,7 @@ import {
   ClockIcon,
   UserIcon,
   StarIcon,
-  CurrencyDollarIcon,
   BookOpenIcon,
-  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';

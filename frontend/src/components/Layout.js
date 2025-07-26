@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Layout = () => {
-  const { user, logout, isSuperAdmin, isTrainer, isTrainee } = useAuth();
+  const { user, logout, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);

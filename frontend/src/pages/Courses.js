@@ -5,16 +5,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { coursesAPI } from '../services/api';
 import {
   MagnifyingGlassIcon,
-  FunnelIcon,
   PlusIcon,
   StarIcon,
   ClockIcon,
   UserIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const Courses = () => {
-  const { user, isTrainer, isSuperAdmin } = useAuth();
+  const { isTrainer, isSuperAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [level, setLevel] = useState('');

@@ -6,7 +6,6 @@ import {
   AcademicCapIcon,
   UsersIcon,
   ClockIcon,
-  CurrencyDollarIcon,
   ChartBarIcon,
   UserGroupIcon,
   BookOpenIcon,
