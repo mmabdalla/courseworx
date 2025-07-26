@@ -7,6 +7,14 @@ const Course = sequelize.define('Course', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  trainerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   title: {
     type: DataTypes.STRING,
     allowNull: false,

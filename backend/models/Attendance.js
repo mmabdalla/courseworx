@@ -7,6 +7,22 @@ const Attendance = sequelize.define('Attendance', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  courseId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
+  },
   date: {
     type: DataTypes.DATEONLY,
     allowNull: false,
