@@ -8,7 +8,11 @@ const setupDatabase = async () => {
   try {
     console.log('🔄 Setting up database...');
     
-    // Sync database
+    // Test database connection
+    await sequelize.authenticate();
+    console.log('✅ Database connection established.');
+    
+    // Sync database with force to recreate all tables
     await sequelize.sync({ force: true });
     console.log('✅ Database synchronized successfully.');
     
