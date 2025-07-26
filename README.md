@@ -23,6 +23,35 @@ cd ..
 npm run dev
 ```
 
+## 🚀 Easy Start/Stop Scripts
+
+### **Windows (Batch Files)**
+```bash
+# Start CourseWorx
+start-courseworx.bat
+
+# Stop CourseWorx
+stop-courseworx.bat
+```
+
+### **Windows (PowerShell)**
+```powershell
+# Start CourseWorx
+.\start-courseworx.ps1
+
+# Stop CourseWorx
+.\stop-courseworx.ps1
+```
+
+### **Manual Commands**
+```bash
+# Start both frontend and backend
+npm start
+
+# Stop all processes
+npm run kill
+```
+
 **Access the app at:** `http://localhost:3000`
 
 **Default login credentials:**
