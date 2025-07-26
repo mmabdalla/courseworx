@@ -2,6 +2,34 @@
 
 A comprehensive full-stack course management application built with React, Node.js, and PostgreSQL. CourseWorx enables trainers to create and manage courses while trainees can enroll, track attendance, and complete assignments.
 
+## ⚡ Quick Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/mmabdalla/courseworx.git
+cd courseworx
+
+# Install all dependencies
+npm run install-all
+
+# Setup database (requires PostgreSQL)
+cd backend
+cp env.example .env
+# Edit .env with your database credentials
+npm run setup-db
+
+# Start the application
+cd ..
+npm run dev
+```
+
+**Access the app at:** `http://localhost:3000`
+
+**Default login credentials:**
+- Super Admin: `admin@courseworx.com` / `admin123`
+- Trainer: `trainer@courseworx.com` / `trainer123`
+- Trainee: `trainee@courseworx.com` / `trainee123`
+
 ## 🚀 Features
 
 ### For Super Admins
@@ -51,17 +79,31 @@ Before running this application, make sure you have the following installed:
 - **PostgreSQL** (v12 or higher)
 - **npm** or **yarn**
 
-## 🚀 Quick Start
+## 🚀 Installation & Setup
 
-### 1. Clone the Repository
+### Prerequisites
+
+Before installing CourseWorx, ensure you have the following installed:
+
+- **Node.js** (v16 or higher) - [Download here](https://nodejs.org/)
+- **PostgreSQL** (v12 or higher) - [Download here](https://www.postgresql.org/download/)
+- **Git** - [Download here](https://git-scm.com/)
+
+### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd CourseWorx
+git clone https://github.com/mmabdalla/courseworx.git
+cd courseworx
 ```
 
-### 2. Install Dependencies
+### Step 2: Install Dependencies
 
+#### Option A: Install All Dependencies at Once
+```bash
+npm run install-all
+```
+
+#### Option B: Install Dependencies Manually
 ```bash
 # Install root dependencies
 npm install
@@ -73,57 +115,150 @@ npm install
 # Install frontend dependencies
 cd ../frontend
 npm install
+cd ..
 ```
 
-### 3. Database Setup
+### Step 3: Database Setup
 
-1. **Create PostgreSQL Database**
+#### 3.1 Create PostgreSQL Database
+
+1. **Open PostgreSQL command line or pgAdmin**
+2. **Create the database:**
    ```sql
    CREATE DATABASE courseworx;
    ```
 
-2. **Configure Environment Variables**
+#### 3.2 Configure Environment Variables
+
+1. **Copy the environment template:**
    ```bash
    cd backend
    cp env.example .env
    ```
-   
-   Edit `.env` file with your database credentials:
+
+2. **Edit the `.env` file with your database credentials:**
    ```env
+   # Database Configuration
    DB_HOST=localhost
    DB_PORT=5432
    DB_NAME=courseworx
-   DB_USER=your_username
-   DB_PASSWORD=your_password
-   JWT_SECRET=your_jwt_secret_key_here
+   DB_USER=your_postgres_username
+   DB_PASSWORD=your_postgres_password
+   
+   # JWT Configuration
+   JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_random
+   JWT_EXPIRES_IN=7d
+   
+   # Server Configuration
+   PORT=5000
+   NODE_ENV=development
    ```
 
-3. **Setup Database and Create Default Users**
-   ```bash
-   cd backend
-   npm run setup-db
-   ```
+#### 3.3 Initialize Database and Create Default Users
 
-### 4. Start the Application
+```bash
+cd backend
+npm run setup-db
+```
 
-#### Development Mode
+This will:
+- Create all database tables
+- Set up relationships between models
+- Create default users (Super Admin, Trainer, Trainee)
+
+### Step 4: Start the Application
+
+#### Development Mode (Recommended for first-time setup)
+
 ```bash
 # From the root directory
 npm run dev
 ```
 
-This will start both backend (port 5000) and frontend (port 3000) servers.
+This command will:
+- Start the backend server on port 5000
+- Start the frontend development server on port 3000
+- Open the application in your browser at `http://localhost:3000`
 
-#### Production Mode
+#### Alternative: Start Services Separately
+
 ```bash
-# Build frontend
-cd frontend
-npm run build
+# Terminal 1 - Start Backend
+cd backend
+npm run dev
 
-# Start backend
-cd ../backend
+# Terminal 2 - Start Frontend
+cd frontend
 npm start
 ```
+
+### Step 5: Access the Application
+
+1. **Open your browser** and go to `http://localhost:3000`
+2. **Login with default credentials:**
+
+   **Super Admin:**
+   - Email: `admin@courseworx.com`
+   - Password: `admin123`
+
+   **Trainer:**
+   - Email: `trainer@courseworx.com`
+   - Password: `trainer123`
+
+   **Trainee:**
+   - Email: `trainee@courseworx.com`
+   - Password: `trainee123`
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. Database Connection Error
+```
+Error: connect ECONNREFUSED 127.0.0.1:5432
+```
+**Solution:**
+- Ensure PostgreSQL is running
+- Check your database credentials in `.env`
+- Verify the database `courseworx` exists
+
+#### 2. Port Already in Use
+```
+Error: listen EADDRINUSE :::5000
+```
+**Solution:**
+- Change the port in `.env` file
+- Or kill the process using the port
+
+#### 3. Node Modules Not Found
+```
+Error: Cannot find module 'express'
+```
+**Solution:**
+- Run `npm install` in the respective directory
+- Or run `npm run install-all` from root
+
+#### 4. Frontend Build Errors
+```
+Error: Module not found
+```
+**Solution:**
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check if all dependencies are properly installed
+
+### Environment Variables Reference
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `DB_HOST` | PostgreSQL host | localhost | Yes |
+| `DB_PORT` | PostgreSQL port | 5432 | Yes |
+| `DB_NAME` | Database name | courseworx | Yes |
+| `DB_USER` | Database username | - | Yes |
+| `DB_PASSWORD` | Database password | - | Yes |
+| `JWT_SECRET` | JWT signing secret | - | Yes |
+| `JWT_EXPIRES_IN` | JWT expiration time | 7d | No |
+| `PORT` | Backend server port | 5000 | No |
+| `NODE_ENV` | Environment mode | development | No |
 
 ## 👥 Default Users
 
