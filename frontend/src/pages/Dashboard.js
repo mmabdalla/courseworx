@@ -1,0 +1,338 @@
+import React from 'react';
+import { useQuery } from 'react-query';
+import { useAuth } from '../contexts/AuthContext';
+import { coursesAPI, enrollmentsAPI, attendanceAPI, usersAPI } from '../services/api';
+import {
+  AcademicCapIcon,
+  UsersIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  UserGroupIcon,
+  BookOpenIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline';
+import LoadingSpinner from '../components/LoadingSpinner';
+
+const Dashboard = () => {
+  const { user, isSuperAdmin, isTrainer, isTrainee } = useAuth();
+
+  // Fetch data based on user role
+  const { data: coursesData, isLoading: coursesLoading } = useQuery(
+    ['courses', 'dashboard'],
+    () => coursesAPI.getAll({ limit: 5, isPublished: true }),
+    { enabled: !isSuperAdmin }
+  );
+
+  const { data: enrollmentsData, isLoading: enrollmentsLoading } = useQuery(
+    ['enrollments', 'my'],
+    () => enrollmentsAPI.getMy({ limit: 5 }),
+    { enabled: isTrainee }
+  );
+
+  const { data: attendanceStats, isLoading: attendanceLoading } = useQuery(
+    ['attendance', 'stats'],
+    () => attendanceAPI.getStats(),
+    { enabled: isTrainee }
+  );
+
+  const { data: userStats, isLoading: userStatsLoading } = useQuery(
+    ['users', 'stats'],
+    () => usersAPI.getStats(),
+    { enabled: isSuperAdmin }
+  );
+
+  const { data: courseStats, isLoading: courseStatsLoading } = useQuery(
+    ['courses', 'stats'],
+    () => coursesAPI.getStats(),
+    { enabled: isSuperAdmin || isTrainer }
+  );
+
+  const isLoading = coursesLoading || enrollmentsLoading || attendanceLoading || 
+                   userStatsLoading || courseStatsLoading;
+
+  if (isLoading) {
+    return <LoadingSpinner size="lg" className="mt-8" />;
+  }
+
+  const renderSuperAdminDashboard = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UsersIcon className="h-8 w-8 text-primary-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Users</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {userStats?.stats?.totalUsers || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <AcademicCapIcon className="h-8 w-8 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Trainers</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {userStats?.stats?.trainers || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UserGroupIcon className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Trainees</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {userStats?.stats?.trainees || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <BookOpenIcon className="h-8 w-8 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Courses</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {courseStats?.stats?.totalCourses || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Users</h3>
+          <div className="space-y-3">
+            {/* Add recent users list here */}
+            <p className="text-gray-500 text-sm">No recent users to display</p>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">System Overview</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Active Users</span>
+              <span className="text-sm font-medium">{userStats?.stats?.activeUsers || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Published Courses</span>
+              <span className="text-sm font-medium">{courseStats?.stats?.publishedCourses || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Featured Courses</span>
+              <span className="text-sm font-medium">{courseStats?.stats?.featuredCourses || 0}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTrainerDashboard = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <BookOpenIcon className="h-8 w-8 text-primary-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">My Courses</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {courseStats?.stats?.totalCourses || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <CheckCircleIcon className="h-8 w-8 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Published</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {courseStats?.stats?.publishedCourses || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UsersIcon className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Students</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {/* Add total students count */}
+                0
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Courses</h3>
+          <div className="space-y-3">
+            {coursesData?.courses?.length > 0 ? (
+              coursesData.courses.map((course) => (
+                <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{course.title}</p>
+                    <p className="text-sm text-gray-500">{course.trainer?.firstName} {course.trainer?.lastName}</p>
+                  </div>
+                  <span className={`badge ${course.isPublished ? 'badge-success' : 'badge-warning'}`}>
+                    {course.isPublished ? 'Published' : 'Draft'}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">No courses found</p>
+            )}
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <button className="w-full btn-primary">
+              Create New Course
+            </button>
+            <button className="w-full btn-secondary">
+              View All Courses
+            </button>
+            <button className="w-full btn-secondary">
+              Manage Assignments
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTraineeDashboard = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <BookOpenIcon className="h-8 w-8 text-primary-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Enrolled Courses</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {enrollmentsData?.enrollments?.length || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <ClockIcon className="h-8 w-8 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Attendance Rate</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {attendanceStats?.stats?.attendanceRate || 0}%
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <ChartBarIcon className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Sessions</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {attendanceStats?.stats?.totalSessions || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">My Enrollments</h3>
+          <div className="space-y-3">
+            {enrollmentsData?.enrollments?.length > 0 ? (
+              enrollmentsData.enrollments.map((enrollment) => (
+                <div key={enrollment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{enrollment.course.title}</p>
+                    <p className="text-sm text-gray-500">Progress: {enrollment.progress}%</p>
+                  </div>
+                  <span className={`badge ${
+                    enrollment.status === 'active' ? 'badge-success' : 
+                    enrollment.status === 'completed' ? 'badge-primary' : 'badge-warning'
+                  }`}>
+                    {enrollment.status}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">No enrollments found</p>
+            )}
+          </div>
+        </div>
+
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <button className="w-full btn-primary">
+              Browse Courses
+            </button>
+            <button className="w-full btn-secondary">
+              View Assignments
+            </button>
+            <button className="w-full btn-secondary">
+              Attendance History
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">Welcome back, {user?.firstName}! Here's what's happening.</p>
+      </div>
+
+      {isSuperAdmin && renderSuperAdminDashboard()}
+      {isTrainer && renderTrainerDashboard()}
+      {isTrainee && renderTraineeDashboard()}
+    </div>
+  );
+};
+
+export default Dashboard; 
