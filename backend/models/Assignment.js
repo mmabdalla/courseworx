@@ -7,6 +7,22 @@ const Assignment = sequelize.define('Assignment', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  trainerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  courseId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
+  },
   title: {
     type: DataTypes.STRING,
     allowNull: false,

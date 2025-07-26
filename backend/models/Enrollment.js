@@ -7,6 +7,22 @@ const Enrollment = sequelize.define('Enrollment', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  courseId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
+  },
   status: {
     type: DataTypes.ENUM('pending', 'active', 'completed', 'cancelled'),
     allowNull: false,
