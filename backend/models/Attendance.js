@@ -9,19 +9,11 @@ const Attendance = sequelize.define('Attendance', {
   },
   userId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Users',
-      key: 'id'
-    }
+    allowNull: false
   },
   courseId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Courses',
-      key: 'id'
-    }
+    allowNull: false
   },
   date: {
     type: DataTypes.DATEONLY,

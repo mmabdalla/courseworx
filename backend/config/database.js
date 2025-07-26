@@ -19,6 +19,10 @@ const sequelize = new Sequelize(
     define: {
       timestamps: true,
       underscored: false
+    },
+    sync: {
+      force: false,
+      alter: false
     }
   }
 );
