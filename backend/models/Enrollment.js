@@ -11,7 +11,7 @@ const Enrollment = sequelize.define('Enrollment', {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: 'users',
+      model: 'Users',
       key: 'id'
     }
   },
@@ -19,7 +19,7 @@ const Enrollment = sequelize.define('Enrollment', {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: 'courses',
+      model: 'Courses',
       key: 'id'
     }
   },
