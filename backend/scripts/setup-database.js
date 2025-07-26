@@ -1,4 +1,6 @@
 const { sequelize } = require('../config/database');
+// Import all models to ensure they are registered with Sequelize
+require('../models');
 const { User } = require('../models');
 require('dotenv').config();
 

@@ -5,6 +5,8 @@ const path = require('path');
 require('dotenv').config();
 
 const { sequelize } = require('./config/database');
+// Import models to ensure they are registered with Sequelize
+require('./models');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const courseRoutes = require('./routes/courses');
