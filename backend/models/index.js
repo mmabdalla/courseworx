@@ -3,6 +3,8 @@ const Course = require('./Course');
 const Enrollment = require('./Enrollment');
 const Attendance = require('./Attendance');
 const Assignment = require('./Assignment');
+const CourseContent = require('./CourseContent');
+const QuizQuestion = require('./QuizQuestion');
 
 // User associations
 User.hasMany(Course, { as: 'createdCourses', foreignKey: 'trainerId' });
@@ -28,10 +30,20 @@ Attendance.belongsTo(Course, { as: 'course', foreignKey: 'courseId' });
 Assignment.belongsTo(User, { as: 'trainer', foreignKey: 'trainerId' });
 Assignment.belongsTo(Course, { as: 'course', foreignKey: 'courseId' });
 
+// Course Content associations
+Course.hasMany(CourseContent, { as: 'contents', foreignKey: 'courseId' });
+CourseContent.belongsTo(Course, { as: 'course', foreignKey: 'courseId' });
+
+// Quiz Question associations
+CourseContent.hasMany(QuizQuestion, { as: 'questions', foreignKey: 'contentId' });
+QuizQuestion.belongsTo(CourseContent, { as: 'content', foreignKey: 'contentId' });
+
 module.exports = {
   User,
   Course,
   Enrollment,
   Attendance,
-  Assignment
+  Assignment,
+  CourseContent,
+  QuizQuestion
 }; 

@@ -86,14 +86,36 @@ export const coursesAPI = {
   },
 };
 
+// Course Content API
+export const courseContentAPI = {
+  getAll: (courseId, params) => api.get(`/course-content/${courseId}/content`, { params }),
+  getById: (courseId, contentId) => api.get(`/course-content/${courseId}/content/${contentId}`),
+  create: (courseId, data) => api.post(`/course-content/${courseId}/content`, data),
+  update: (courseId, contentId, data) => api.put(`/course-content/${courseId}/content/${contentId}`, data),
+  delete: (courseId, contentId) => api.delete(`/course-content/${courseId}/content/${contentId}`),
+  uploadFile: (courseId, contentType, file, contentId = null) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (contentId) formData.append('contentId', contentId);
+    return api.post(`/course-content/${courseId}/content/${contentType}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  addQuizQuestions: (courseId, contentId, questions) => 
+    api.post(`/course-content/${courseId}/content/${contentId}/questions`, { questions }),
+};
+
 // Enrollments API
 export const enrollmentsAPI = {
+  getAll: (params) => api.get('/enrollments', { params }),
   create: (data) => api.post('/enrollments', data),
   getMy: (params) => api.get('/enrollments/my', { params }),
   getById: (id) => api.get(`/enrollments/${id}`),
   updateStatus: (id, data) => api.put(`/enrollments/${id}/status`, data),
   updatePayment: (id, data) => api.put(`/enrollments/${id}/payment`, data),
+  updateProgress: (id, progress) => api.put(`/enrollments/${id}/progress`, { progress }),
   cancel: (id) => api.delete(`/enrollments/${id}`),
+  getStats: () => api.get('/enrollments/stats/overview'),
 };
 
 // Attendance API
