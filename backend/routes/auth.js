@@ -30,11 +30,15 @@ router.post('/login', [
     const { email, password } = req.body;
 
     const user = await User.findOne({ where: { email } });
+    console.log('Login attempt for email:', email, 'User found:', !!user, 'User active:', user?.isActive);
+    
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Invalid credentials or account inactive.' });
     }
 
     const isPasswordValid = await user.comparePassword(password);
+    console.log('Password validation result:', isPasswordValid);
+    
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
@@ -53,7 +57,8 @@ router.post('/login', [
         email: user.email,
         role: user.role,
         avatar: user.avatar,
-        phone: user.phone
+        phone: user.phone,
+        requiresPasswordChange: user.requiresPasswordChange
       }
     });
   } catch (error) {
@@ -72,7 +77,7 @@ router.post('/register', [
   body('lastName').isLength({ min: 2, max: 50 }),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
-  body('role').isIn(['trainer', 'trainee'])
+  body('role').isIn(['super_admin', 'trainer', 'trainee'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -95,6 +100,13 @@ router.post('/register', [
       password,
       role,
       phone
+    });
+
+    console.log('User created successfully:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive
     });
 
     res.status(201).json({
@@ -205,6 +217,50 @@ router.put('/change-password', [
     res.json({ message: 'Password changed successfully.' });
   } catch (error) {
     console.error('Password change error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   PUT /api/auth/first-password-change
+// @desc    Change password on first login (for imported users)
+// @access  Private
+router.put('/first-password-change', [
+  auth,
+  body('newPassword').isLength({ min: 6 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { newPassword } = req.body;
+
+    // Check if user requires password change
+    if (!req.user.requiresPasswordChange) {
+      return res.status(400).json({ error: 'Password change not required.' });
+    }
+
+    await req.user.update({ 
+      password: newPassword,
+      requiresPasswordChange: false
+    });
+
+    res.json({ 
+      message: 'Password changed successfully.',
+      user: {
+        id: req.user.id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+        role: req.user.role,
+        avatar: req.user.avatar,
+        phone: req.user.phone,
+        requiresPasswordChange: false
+      }
+    });
+  } catch (error) {
+    console.error('First password change error:', error);
     res.status(500).json({ error: 'Server error.' });
   }
 });

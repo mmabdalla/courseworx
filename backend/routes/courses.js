@@ -2,8 +2,36 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { Course, User, Enrollment } = require('../models');
 const { auth, requireSuperAdmin, requireTrainer } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
+
+// Multer storage for course images
+const courseImageStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const courseName = req.body.courseName || req.params.courseName;
+    const dir = path.join(__dirname, '../uploads/courses', courseName);
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+const uploadCourseImage = multer({
+  storage: courseImageStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 // @route   GET /api/courses
 // @desc    Get all courses (with filters)
@@ -14,7 +42,7 @@ router.get('/', async (req, res) => {
       category, 
       level, 
       trainerId, 
-      isPublished = true, 
+      isPublished, 
       page = 1, 
       limit = 12,
       search,
@@ -28,7 +56,15 @@ router.get('/', async (req, res) => {
     if (category) whereClause.category = category;
     if (level) whereClause.level = level;
     if (trainerId) whereClause.trainerId = trainerId;
-    if (isPublished !== undefined) whereClause.isPublished = isPublished === 'true';
+    // Only apply isPublished filter if it's provided in the query
+    if (isPublished !== undefined) {
+      whereClause.isPublished = isPublished === 'true';
+    } else {
+      // For non-authenticated users, only show published courses
+      if (!req.user || req.user.role === 'trainee') {
+        whereClause.isPublished = true;
+      }
+    }
     
     if (search) {
       whereClause[require('sequelize').Op.or] = [
@@ -156,7 +192,7 @@ router.post('/', [
       startDate,
       endDate,
       trainerId: req.user.id,
-      isPublished: req.user.role === 'super_admin' // Auto-publish for super admin
+      isPublished: true // Auto-publish for all users
     });
 
     const courseWithTrainer = await Course.findByPk(course.id, {
@@ -288,6 +324,24 @@ router.put('/:id/publish', [
     });
   } catch (error) {
     console.error('Publish course error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   POST /api/courses/:courseName/image
+// @desc    Upload course image (Super Admin or Trainer)
+// @access  Private
+router.post('/:courseName/image', [auth, requireTrainer, uploadCourseImage.single('image')], async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded.' });
+    }
+    res.json({
+      message: 'Image uploaded successfully.',
+      imageUrl: `/uploads/courses/${req.params.courseName}/${req.file.filename}`
+    });
+  } catch (error) {
+    console.error('Upload course image error:', error);
     res.status(500).json({ error: 'Server error.' });
   }
 });

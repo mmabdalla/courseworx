@@ -18,10 +18,18 @@
     "stop": "echo \"Press Ctrl+C to stop all processes\"",
     "kill": "taskkill /f /im node.exe 2>nul || echo \"No Node.js processes found\""
   },
-  "keywords": ["course", "management", "education", "training"],
+  "keywords": [
+    "course",
+    "management",
+    "education",
+    "training"
+  ],
   "author": "CourseWorx Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "react-modal": "^3.16.3"
   }
-} 
+}

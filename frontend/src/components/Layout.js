@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import PasswordChangeModal from './PasswordChangeModal';
 import {
   HomeIcon,
   AcademicCapIcon,
@@ -16,6 +17,14 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Check if user requires password change
+  useEffect(() => {
+    if (user?.requiresPasswordChange) {
+      setShowPasswordModal(true);
+    }
+  }, [user?.requiresPasswordChange]);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
@@ -167,6 +176,12 @@ const Layout = () => {
           </div>
         </main>
       </div>
+
+      {/* Password Change Modal */}
+      <PasswordChangeModal 
+        isOpen={showPasswordModal} 
+        onClose={() => setShowPasswordModal(false)} 
+      />
     </div>
   );
 };

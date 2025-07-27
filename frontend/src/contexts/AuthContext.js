@@ -37,15 +37,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login with email:', email);
       const response = await authAPI.login(email, password);
       const { token, user } = response.data;
       
+      console.log('Login successful, user:', user);
       localStorage.setItem('token', token);
       setUser(user);
       
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
+      console.error('Login error details:', error.response?.data);
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
       return { success: false, error: message };
@@ -83,6 +86,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   const value = {
     user,
     loading,
@@ -90,6 +97,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     changePassword,
+    updateUser,
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'super_admin',
     isTrainer: user?.role === 'trainer',

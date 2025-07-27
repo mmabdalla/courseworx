@@ -12,6 +12,52 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+
+const SliderImageUpload = () => {
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    setFile(f);
+    setPreview(f ? URL.createObjectURL(f) : null);
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      await usersAPI.uploadSliderImage(file);
+      toast.success('Slider image uploaded!');
+      setFile(null);
+      setPreview(null);
+    } catch (err) {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">Upload Slider Image</h3>
+      <input type="file" accept="image/*" onChange={handleFileChange} />
+      {preview && (
+        <img src={preview} alt="Preview" className="mt-4 h-32 object-contain rounded" />
+      )}
+      <button
+        className="btn-primary mt-4"
+        onClick={handleUpload}
+        disabled={!file || uploading}
+      >
+        {uploading ? 'Uploading...' : 'Upload'}
+      </button>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const { user, isSuperAdmin, isTrainer, isTrainee } = useAuth();
@@ -114,7 +160,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Users</h3>
           <div className="space-y-3">
@@ -122,6 +168,7 @@ const Dashboard = () => {
             <p className="text-gray-500 text-sm">No recent users to display</p>
           </div>
         </div>
+        <SliderImageUpload />
 
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">System Overview</h3>

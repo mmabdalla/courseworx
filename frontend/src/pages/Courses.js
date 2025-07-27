@@ -21,11 +21,21 @@ const Courses = () => {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
 
-  const { data: coursesData, isLoading } = useQuery(
+  const { data: coursesData, isLoading, error } = useQuery(
     ['courses', { search, category, level, sortBy, sortOrder }],
-    () => coursesAPI.getAll({ search, category, level, sortBy, sortOrder }),
+    () => coursesAPI.getAll({ 
+      search, 
+      category, 
+      level, 
+      sortBy, 
+      sortOrder
+    }),
     { keepPreviousData: true }
   );
+
+  // Debug logging
+  console.log('coursesData:', coursesData);
+  console.log('error:', error);
 
   const { data: categoriesData } = useQuery(
     ['categories'],
@@ -58,6 +68,10 @@ const Courses = () => {
 
   if (isLoading) {
     return <LoadingSpinner size="lg" className="mt-8" />;
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error loading courses: {error.message}</div>;
   }
 
   return (
@@ -165,68 +179,70 @@ const Courses = () => {
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {coursesData?.courses?.map((course) => (
-          <div key={course.id} className="card-hover group">
-            <div className="aspect-w-16 aspect-h-9 mb-4">
-              {course.thumbnail ? (
-                <img
-                  src={course.thumbnail}
-                  alt={course.title}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              ) : (
-                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <AcademicCapIcon className="h-12 w-12 text-gray-400" />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                  {course.title}
-                </h3>
-                <span className={`badge ${getLevelColor(course.level)}`}>
-                  {course.level}
-                </span>
+          <Link key={course.id} to={`/courses/${course.id}`} className="block">
+            <div className="card mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+              <div className="aspect-w-16 aspect-h-9 mb-4">
+                {course.thumbnail ? (
+                  <img
+                    src={course.thumbnail}
+                    alt={course.title}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <AcademicCapIcon className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
               </div>
 
-              <p className="text-gray-600 text-sm line-clamp-2">
-                {course.shortDescription || course.description}
-              </p>
-
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center">
-                  <UserIcon className="h-4 w-4 mr-1" />
-                  <span>{course.trainer?.firstName} {course.trainer?.lastName}</span>
-                </div>
-                <div className="flex items-center">
-                  <ClockIcon className="h-4 w-4 mr-1" />
-                  <span>{formatDuration(course.duration)}</span>
-                </div>
-              </div>
-
-              {course.rating && (
-                <div className="flex items-center">
-                  <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
-                  <span className="text-sm text-gray-600">
-                    {course.rating} ({course.totalRatings} ratings)
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                    {course.title}
+                  </h3>
+                  <span className={`badge ${getLevelColor(course.level)}`}>
+                    {course.level}
                   </span>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                <div className="text-lg font-bold text-gray-900">
-                  {formatPrice(course.price)}
+                <p className="text-gray-600 text-sm line-clamp-2">
+                  {course.shortDescription || course.description}
+                </p>
+
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center">
+                    <UserIcon className="h-4 w-4 mr-1" />
+                    <span>{course.trainer?.firstName} {course.trainer?.lastName}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <ClockIcon className="h-4 w-4 mr-1" />
+                    <span>{formatDuration(course.duration)}</span>
+                  </div>
                 </div>
-                <Link
-                  to={`/courses/${course.id}`}
-                  className="btn-primary text-sm"
-                >
-                  {isTrainer || isSuperAdmin ? 'Edit' : 'View Details'}
-                </Link>
+
+                {course.rating && (
+                  <div className="flex items-center">
+                    <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
+                    <span className="text-sm text-gray-600">
+                      {course.rating} ({course.totalRatings} ratings)
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                  <div className="text-lg font-bold text-gray-900">
+                    {formatPrice(course.price)}
+                  </div>
+                  <Link
+                    to={isTrainer || isSuperAdmin ? `/courses/${course.id}/edit` : `/courses/${course.id}`}
+                    className="btn-primary text-sm"
+                  >
+                    {isTrainer || isSuperAdmin ? 'Edit' : 'View Details'}
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

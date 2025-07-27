@@ -41,28 +41,49 @@ export const authAPI = {
   updateProfile: (data) => api.put('/auth/profile', data),
   changePassword: (currentPassword, newPassword) => 
     api.put('/auth/change-password', { currentPassword, newPassword }),
+  firstPasswordChange: (data) => api.put('/auth/first-password-change', data),
   register: (userData) => api.post('/auth/register', userData),
 };
 
 // Users API
 export const usersAPI = {
-  getAll: (params) => api.get('/users', { params }),
-  getById: (id) => api.get(`/users/${id}`),
-  update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`),
-  getStats: () => api.get('/users/stats/overview'),
+  getAll: (params) => api.get('users', { params }),
+  getById: (id) => api.get(`users/${id}`),
+  update: (id, data) => api.put(`users/${id}`, data),
+  delete: (id) => api.delete(`users/${id}`),
+  changePassword: (id, password) => api.put(`users/${id}/password`, { password }),
+  getStats: () => api.get('users/stats/overview'),
+  importUsers: (data) => api.post('users/import', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  uploadSliderImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('users/slider/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // Courses API
 export const coursesAPI = {
-  getAll: (params) => api.get('/courses', { params }),
-  getById: (id) => api.get(`/courses/${id}`),
+  getAll: (params) => api.get('/courses', { params }).then(res => res.data),
+  getById: (id) => api.get(`/courses/${id}`).then(res => res.data),
   create: (data) => api.post('/courses', data),
   update: (id, data) => api.put(`/courses/${id}`, data),
   delete: (id) => api.delete(`/courses/${id}`),
   publish: (id, isPublished) => api.put(`/courses/${id}/publish`, { isPublished }),
   getCategories: () => api.get('/courses/categories/all'),
   getStats: () => api.get('/courses/stats/overview'),
+  uploadCourseImage: (courseName, file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post(`/courses/${courseName}/image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // Enrollments API
