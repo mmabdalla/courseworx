@@ -5,10 +5,14 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
+import CourseCreate from './pages/CourseCreate';
+import UserImport from './pages/UserImport';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
+import CourseEdit from './pages/CourseEdit';
+import Home from './pages/Home';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading } = useAuth();
@@ -36,25 +40,38 @@ const AppRoutes = () => {
       <Route path="/login" element={
         user ? <Navigate to="/dashboard" replace /> : <Login />
       } />
-      
-      <Route path="/" element={
-        <PrivateRoute>
-          <Layout />
-        </PrivateRoute>
-      }>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="courses" element={<Courses />} />
-        <Route path="courses/:id" element={<CourseDetail />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="users" element={
+      {/* Public homepage route */}
+      <Route path="/" element={<Home />} />
+
+      {/* Private routes with Layout */}
+      <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/courses" element={<Courses />} />
+        <Route path="/courses/create" element={
+          <PrivateRoute allowedRoles={['super_admin', 'trainer']}>
+            <CourseCreate />
+          </PrivateRoute>
+        } />
+        <Route path="/courses/:id" element={<CourseDetail />} />
+        <Route path="/courses/:id/edit" element={
+          <PrivateRoute allowedRoles={['super_admin', 'trainer']}>
+            <CourseEdit />
+          </PrivateRoute>
+        } />
+        <Route path="/users/import" element={
+          <PrivateRoute allowedRoles={['super_admin', 'trainer']}>
+            <UserImport />
+          </PrivateRoute>
+        } />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/users" element={
           <PrivateRoute allowedRoles={['super_admin']}>
             <Users />
           </PrivateRoute>
         } />
       </Route>
-      
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Catch-all: redirect to dashboard if authenticated, else to login */}
+      <Route path="*" element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
     </Routes>
   );
 };

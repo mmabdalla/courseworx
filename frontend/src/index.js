@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 import App from './App';
+import './i18n';
+import Modal from 'react-modal';
+Modal.setAppElement('#root');
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -19,10 +19,14 @@ const CourseDetail = () => {
   const [enrolling, setEnrolling] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: course, isLoading } = useQuery(
+  const { data: course, isLoading, error } = useQuery(
     ['course', id],
     () => coursesAPI.getById(id),
-    { enabled: !!id }
+    { 
+      enabled: !!id,
+      retry: 1,
+      retryDelay: 1000
+    }
   );
 
   const enrollmentMutation = useMutation(
@@ -49,7 +53,7 @@ const CourseDetail = () => {
     setEnrolling(true);
     enrollmentMutation.mutate({
       courseId: id,
-      paymentAmount: course.course.price,
+      paymentAmount: courseData.price,
     });
   };
 
@@ -80,7 +84,17 @@ const CourseDetail = () => {
     return <LoadingSpinner size="lg" className="mt-8" />;
   }
 
-  if (!course) {
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900">Error loading course</h3>
+        <p className="text-gray-500">Failed to load course details.</p>
+        <p className="text-sm text-gray-400 mt-2">Error: {error.message}</p>
+      </div>
+    );
+  }
+
+  if (!course?.course) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900">Course not found</h3>
@@ -89,22 +103,24 @@ const CourseDetail = () => {
     );
   }
 
+  const courseData = course.course;
+
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{course.course.title}</h1>
-        <p className="text-gray-600 mt-2">{course.course.shortDescription}</p>
+        <h1 className="text-3xl font-bold text-gray-900">{courseData.title}</h1>
+        <p className="text-gray-600 mt-2">{courseData.shortDescription}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Course Image */}
-          {course.course.thumbnail && (
+          {courseData.thumbnail && (
             <div className="aspect-w-16 aspect-h-9">
               <img
-                src={course.course.thumbnail}
-                alt={course.course.title}
+                src={courseData.thumbnail}
+                alt={courseData.title}
                 className="w-full h-64 object-cover rounded-lg"
               />
             </div>
@@ -115,41 +131,41 @@ const CourseDetail = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">About This Course</h2>
             <div className="prose max-w-none">
               <p className="text-gray-700 whitespace-pre-wrap">
-                {course.course.description}
+                {courseData.description}
               </p>
             </div>
           </div>
 
           {/* Course Requirements */}
-          {course.course.requirements && (
+          {courseData.requirements && (
             <div className="card">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Requirements</h2>
               <div className="prose max-w-none">
                 <p className="text-gray-700 whitespace-pre-wrap">
-                  {course.course.requirements}
+                  {courseData.requirements}
                 </p>
               </div>
             </div>
           )}
 
           {/* Learning Outcomes */}
-          {course.course.learningOutcomes && (
+          {courseData.learningOutcomes && (
             <div className="card">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">What You'll Learn</h2>
               <div className="prose max-w-none">
                 <p className="text-gray-700 whitespace-pre-wrap">
-                  {course.course.learningOutcomes}
+                  {courseData.learningOutcomes}
                 </p>
               </div>
             </div>
           )}
 
           {/* Course Curriculum */}
-          {course.course.curriculum && course.course.curriculum.length > 0 && (
+          {courseData.curriculum && courseData.curriculum.length > 0 && (
             <div className="card">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Curriculum</h2>
               <div className="space-y-3">
-                {course.course.curriculum.map((section, index) => (
+                {courseData.curriculum.map((section, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4">
                     <h3 className="font-medium text-gray-900 mb-2">{section.title}</h3>
                     {section.lessons && (
@@ -175,7 +191,7 @@ const CourseDetail = () => {
             {/* Price and Enrollment */}
             <div className="text-center mb-6">
               <div className="text-3xl font-bold text-gray-900 mb-2">
-                {formatPrice(course.course.price)}
+                {formatPrice(courseData.price)}
               </div>
               {isTrainee && (
                 <button
@@ -192,8 +208,8 @@ const CourseDetail = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Level</span>
-                <span className={`badge ${getLevelColor(course.course.level)}`}>
-                  {course.course.level}
+                <span className={`badge ${getLevelColor(courseData.level)}`}>
+                  {courseData.level}
                 </span>
               </div>
 
@@ -201,29 +217,29 @@ const CourseDetail = () => {
                 <span className="text-sm text-gray-500">Duration</span>
                 <span className="text-sm text-gray-900 flex items-center">
                   <ClockIcon className="h-4 w-4 mr-1" />
-                  {formatDuration(course.course.duration)}
+                  {formatDuration(courseData.duration)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Category</span>
-                <span className="text-sm text-gray-900">{course.course.category}</span>
+                <span className="text-sm text-gray-900">{courseData.category}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Instructor</span>
                 <span className="text-sm text-gray-900 flex items-center">
                   <UserIcon className="h-4 w-4 mr-1" />
-                  {course.course.trainer?.firstName} {course.course.trainer?.lastName}
+                  {courseData.trainer?.firstName} {courseData.trainer?.lastName}
                 </span>
               </div>
 
-              {course.course.rating && (
+              {courseData.rating && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Rating</span>
                   <span className="text-sm text-gray-900 flex items-center">
                     <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
-                    {course.course.rating} ({course.course.totalRatings})
+                    {courseData.rating} ({courseData.totalRatings})
                   </span>
                 </div>
               )}
@@ -232,17 +248,17 @@ const CourseDetail = () => {
                 <span className="text-sm text-gray-500">Students</span>
                 <span className="text-sm text-gray-900 flex items-center">
                   <AcademicCapIcon className="h-4 w-4 mr-1" />
-                  {course.course.enrolledStudents || 0} enrolled
+                  {courseData.enrolledStudents || 0} enrolled
                 </span>
               </div>
             </div>
 
             {/* Course Features */}
-            {course.course.tags && course.course.tags.length > 0 && (
+            {courseData.tags && courseData.tags.length > 0 && (
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Course Tags</h3>
                 <div className="flex flex-wrap gap-2">
-                  {course.course.tags.map((tag, index) => (
+                  {courseData.tags.map((tag, index) => (
                     <span key={index} className="badge badge-secondary">
                       {tag}
                     </span>
@@ -252,23 +268,23 @@ const CourseDetail = () => {
             )}
 
             {/* Course Dates */}
-            {(course.course.startDate || course.course.endDate) && (
+            {(courseData.startDate || courseData.endDate) && (
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Course Schedule</h3>
                 <div className="space-y-2 text-sm">
-                  {course.course.startDate && (
+                  {courseData.startDate && (
                     <div className="flex justify-between">
                       <span className="text-gray-500">Start Date</span>
                       <span className="text-gray-900">
-                        {new Date(course.course.startDate).toLocaleDateString()}
+                        {new Date(courseData.startDate).toLocaleDateString()}
                       </span>
                     </div>
                   )}
-                  {course.course.endDate && (
+                  {courseData.endDate && (
                     <div className="flex justify-between">
                       <span className="text-gray-500">End Date</span>
                       <span className="text-gray-900">
-                        {new Date(course.course.endDate).toLocaleDateString()}
+                        {new Date(courseData.endDate).toLocaleDateString()}
                       </span>
                     </div>
                   )}
