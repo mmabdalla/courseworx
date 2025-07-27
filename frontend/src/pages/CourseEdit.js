@@ -27,6 +27,8 @@ const CourseEdit = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+
+
   const handleImageChange = (e) => {
     const f = e.target.files[0];
     setImageFile(f);
@@ -53,6 +55,8 @@ const CourseEdit = () => {
     () => coursesAPI.getById(id),
     { enabled: !!id }
   );
+
+
 
   useEffect(() => {
     if (courseData && courseData.course) {
@@ -93,6 +97,8 @@ const CourseEdit = () => {
     }
   );
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -115,6 +121,8 @@ const CourseEdit = () => {
       [name]: type === 'checkbox' ? checked : value
     }));
   };
+
+
 
   if (!isTrainer && !isSuperAdmin) {
     return (
@@ -425,6 +433,8 @@ const CourseEdit = () => {
           </button>
         </div>
 
+
+
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
           <button
@@ -453,6 +463,8 @@ const CourseEdit = () => {
           </button>
         </div>
       </form>
+
+
     </div>
   );
 };

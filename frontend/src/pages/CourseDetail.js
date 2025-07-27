@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { coursesAPI, enrollmentsAPI } from '../services/api';
@@ -9,13 +9,14 @@ import {
   UserIcon,
   StarIcon,
   BookOpenIcon,
+  CogIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const CourseDetail = () => {
   const { id } = useParams();
-  const { user, isTrainee } = useAuth();
+  const { user, isTrainee, isTrainer, isSuperAdmin } = useAuth();
   const [enrolling, setEnrolling] = useState(false);
   const queryClient = useQueryClient();
 
@@ -108,8 +109,21 @@ const CourseDetail = () => {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{courseData.title}</h1>
-        <p className="text-gray-600 mt-2">{courseData.shortDescription}</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{courseData.title}</h1>
+            <p className="text-gray-600 mt-2">{courseData.shortDescription}</p>
+          </div>
+          {(isTrainer || isSuperAdmin) && (
+            <Link
+              to={`/courses/${id}/content`}
+              className="btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            >
+              <CogIcon className="h-5 w-5 mr-2" />
+              Manage Content
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
