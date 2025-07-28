@@ -43,7 +43,11 @@ export const AuthProvider = ({ children }) => {
       
       console.log('Login successful, user:', user);
       localStorage.setItem('token', token);
-      setUser(user);
+      
+      // Set user state after a brief delay to prevent immediate redirect
+      setTimeout(() => {
+        setUser(user);
+      }, 50);
       
       toast.success('Login successful!');
       return { success: true };
