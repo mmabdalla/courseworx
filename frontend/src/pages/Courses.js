@@ -179,8 +179,8 @@ const Courses = () => {
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {coursesData?.courses?.map((course) => (
-          <Link key={course.id} to={`/courses/${course.id}`} className="block">
-            <div className="card mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+          <div key={course.id} className="card mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+            <Link to={`/courses/${course.id}`} className="block">
               <div className="aspect-w-16 aspect-h-9 mb-4">
                 {course.thumbnail ? (
                   <img
@@ -228,21 +228,22 @@ const Courses = () => {
                     </span>
                   </div>
                 )}
-
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                  <div className="text-lg font-bold text-gray-900">
-                    {formatPrice(course.price)}
-                  </div>
-                  <Link
-                    to={isTrainer || isSuperAdmin ? `/courses/${course.id}/edit` : `/courses/${course.id}`}
-                    className="btn-primary text-sm"
-                  >
-                    {isTrainer || isSuperAdmin ? 'Edit' : 'View Details'}
-                  </Link>
-                </div>
               </div>
+            </Link>
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+              <div className="text-lg font-bold text-gray-900">
+                {formatPrice(course.price)}
+              </div>
+              <Link
+                to={isTrainer || isSuperAdmin ? `/courses/${course.id}/edit` : `/courses/${course.id}`}
+                className="btn-primary text-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {isTrainer || isSuperAdmin ? 'Edit' : 'View Details'}
+              </Link>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 

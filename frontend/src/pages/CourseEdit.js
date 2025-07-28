@@ -10,8 +10,10 @@ import {
   BookOpenIcon,
   TagIcon,
   UserGroupIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
+import TrainerAssignmentModal from '../components/TrainerAssignmentModal';
 import toast from 'react-hot-toast';
 
 const CourseEdit = () => {
@@ -26,6 +28,9 @@ const CourseEdit = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Trainer assignment modal state
+  const [showTrainerModal, setShowTrainerModal] = useState(false);
 
 
 
@@ -433,7 +438,36 @@ const CourseEdit = () => {
           </button>
         </div>
 
-
+        {/* Trainer Assignment - Super Admin Only */}
+        {isSuperAdmin && courseData?.course && (
+          <div className="card mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Trainer Assignment</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Current Trainer:</p>
+                {courseData.course.trainer ? (
+                  <div className="flex items-center">
+                    <UserIcon className="h-5 w-5 text-gray-400 mr-2" />
+                    <span className="font-medium">
+                      {courseData.course.trainer.firstName} {courseData.course.trainer.lastName}
+                    </span>
+                    <span className="text-gray-500 ml-2">({courseData.course.trainer.email})</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No trainer assigned</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTrainerModal(true)}
+                className="btn-secondary flex items-center"
+              >
+                <UserIcon className="h-4 w-4 mr-2" />
+                Assign Trainer
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-4">
@@ -464,7 +498,13 @@ const CourseEdit = () => {
         </div>
       </form>
 
-
+      {/* Trainer Assignment Modal */}
+      <TrainerAssignmentModal
+        isOpen={showTrainerModal}
+        onClose={() => setShowTrainerModal(false)}
+        courseId={id}
+        currentTrainer={courseData?.course?.trainer}
+      />
     </div>
   );
 };

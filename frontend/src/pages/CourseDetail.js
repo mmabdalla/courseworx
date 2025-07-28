@@ -10,14 +10,17 @@ import {
   StarIcon,
   BookOpenIcon,
   CogIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
+import TrainerAssignmentModal from '../components/TrainerAssignmentModal';
 import toast from 'react-hot-toast';
 
 const CourseDetail = () => {
   const { id } = useParams();
   const { user, isTrainee, isTrainer, isSuperAdmin } = useAuth();
   const [enrolling, setEnrolling] = useState(false);
+  const [showTrainerModal, setShowTrainerModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: course, isLoading, error } = useQuery(
@@ -114,15 +117,34 @@ const CourseDetail = () => {
             <h1 className="text-3xl font-bold text-gray-900">{courseData.title}</h1>
             <p className="text-gray-600 mt-2">{courseData.shortDescription}</p>
           </div>
-          {(isTrainer || isSuperAdmin) && (
+          <div className="flex space-x-3">
             <Link
-              to={`/courses/${id}/content`}
+              to={`/courses/${id}/learn`}
               className="btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
-              <CogIcon className="h-5 w-5 mr-2" />
-              Manage Content
+              <EyeIcon className="h-5 w-5 mr-2" />
+              View Content
             </Link>
-          )}
+            {(isTrainer || isSuperAdmin) && (
+              <Link
+                to={`/courses/${id}/content`}
+                className="btn-secondary flex items-center"
+              >
+                <CogIcon className="h-5 w-5 mr-2" />
+                Manage Content
+              </Link>
+            )}
+            {isSuperAdmin && (
+              <button
+                onClick={() => setShowTrainerModal(true)}
+                className="btn-secondary flex items-center"
+                title="Assign Trainer (Super Admin only)"
+              >
+                <UserIcon className="h-4 w-4 mr-2" />
+                Assign Trainer
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -308,6 +330,14 @@ const CourseDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Trainer Assignment Modal */}
+      <TrainerAssignmentModal
+        isOpen={showTrainerModal}
+        onClose={() => setShowTrainerModal(false)}
+        courseId={id}
+        currentTrainer={courseData?.trainer}
+      />
     </div>
   );
 };

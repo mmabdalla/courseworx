@@ -13,6 +13,7 @@ import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 import CourseEdit from './pages/CourseEdit';
 import CourseContent from './pages/CourseContent';
+import CourseContentViewer from './pages/CourseContentViewer';
 import Home from './pages/Home';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
@@ -62,6 +63,11 @@ const AppRoutes = () => {
         <Route path="/courses/:id/content" element={
           <PrivateRoute allowedRoles={['super_admin', 'trainer']}>
             <CourseContent />
+          </PrivateRoute>
+        } />
+        <Route path="/courses/:id/learn" element={
+          <PrivateRoute>
+            <CourseContentViewer />
           </PrivateRoute>
         } />
         <Route path="/users/import" element={
