@@ -4,7 +4,6 @@ import { coursesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
   XMarkIcon,
-  UserIcon,
   AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from './LoadingSpinner';
@@ -18,18 +17,12 @@ const TrainerAssignmentModal = ({ isOpen, onClose, courseId, currentTrainer }) =
   // Get available trainers
   const { data: trainersData, isLoading: trainersLoading, error: trainersError } = useQuery(
     ['available-trainers'],
-    () => {
-      console.log('Fetching available trainers...');
-      return coursesAPI.getAvailableTrainers();
-    },
+    () => coursesAPI.getAvailableTrainers(),
     {
       enabled: isOpen,
       onError: (error) => {
         console.error('Trainer loading error:', error);
         toast.error('Failed to load trainers');
-      },
-      onSuccess: (data) => {
-        console.log('Trainers loaded successfully:', data);
       }
     }
   );
@@ -149,16 +142,7 @@ const TrainerAssignmentModal = ({ isOpen, onClose, courseId, currentTrainer }) =
             </div>
           )}
           
-          {/* Debug info - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
-              <p>Debug: trainersData = {JSON.stringify(trainersData, null, 2)}</p>
-              <p>Debug: trainersLoading = {trainersLoading}</p>
-              <p>Debug: trainersError = {trainersError?.message}</p>
-              <p>Debug: Current user role = {user?.role}</p>
-              <p>Debug: Current user ID = {user?.id}</p>
-            </div>
-          )}
+
 
           <div className="flex justify-end space-x-3">
             <button

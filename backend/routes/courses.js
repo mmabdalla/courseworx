@@ -437,8 +437,6 @@ router.put('/:id/assign-trainer', [
 // @access  Private (Super Admin)
 router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
   try {
-    console.log('Get available trainers request from user:', req.user.id, 'role:', req.user.role);
-    
     const trainers = await User.findAll({
       where: {
         role: 'trainer',
@@ -448,7 +446,6 @@ router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
       order: [['firstName', 'ASC'], ['lastName', 'ASC']]
     });
 
-    console.log('Found trainers:', trainers.length);
     res.json({ trainers });
   } catch (error) {
     console.error('Get available trainers error:', error);
