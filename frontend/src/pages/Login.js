@@ -9,19 +9,25 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(''); // Clear previous errors
 
     try {
       const result = await login(email, password);
       if (result.success) {
         navigate('/dashboard');
+      } else {
+        setError(result.error || 'Login failed');
+        console.error('Login failed:', result.error);
       }
     } catch (error) {
+      setError('An unexpected error occurred');
       console.error('Login error:', error);
     } finally {
       setLoading(false);
@@ -100,6 +106,21 @@ const Login = () => {
               </button>
             </div>
           </div>
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Login Error
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    {error}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <button

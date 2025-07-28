@@ -75,6 +75,8 @@ export const coursesAPI = {
   update: (id, data) => api.put(`/courses/${id}`, data),
   delete: (id) => api.delete(`/courses/${id}`),
   publish: (id, isPublished) => api.put(`/courses/${id}/publish`, { isPublished }),
+  assignTrainer: (id, trainerId) => api.put(`/courses/${id}/assign-trainer`, { trainerId }),
+  getAvailableTrainers: () => api.get('/courses/trainers/available'),
   getCategories: () => api.get('/courses/categories/all'),
   getStats: () => api.get('/courses/stats/overview'),
   uploadCourseImage: (courseName, file) => {
@@ -88,8 +90,8 @@ export const coursesAPI = {
 
 // Course Content API
 export const courseContentAPI = {
-  getAll: (courseId, params) => api.get(`/course-content/${courseId}/content`, { params }),
-  getById: (courseId, contentId) => api.get(`/course-content/${courseId}/content/${contentId}`),
+  getAll: (courseId, params) => api.get(`/course-content/${courseId}/content`, { params }).then(res => res.data),
+  getById: (courseId, contentId) => api.get(`/course-content/${courseId}/content/${contentId}`).then(res => res.data),
   create: (courseId, data) => api.post(`/course-content/${courseId}/content`, data),
   update: (courseId, contentId, data) => api.put(`/course-content/${courseId}/content/${contentId}`, data),
   delete: (courseId, contentId) => api.delete(`/course-content/${courseId}/content/${contentId}`),
@@ -103,6 +105,8 @@ export const courseContentAPI = {
   },
   addQuizQuestions: (courseId, contentId, questions) => 
     api.post(`/course-content/${courseId}/content/${contentId}/questions`, { questions }),
+  submitQuiz: (courseId, contentId, data) => 
+    api.post(`/course-content/${courseId}/content/${contentId}/submit`, data),
 };
 
 // Enrollments API

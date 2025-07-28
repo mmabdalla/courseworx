@@ -374,6 +374,88 @@ router.get('/categories/all', async (req, res) => {
   }
 });
 
+// @route   PUT /api/courses/:id/assign-trainer
+// @desc    Assign trainer to course (Super Admin only)
+// @access  Private (Super Admin)
+router.put('/:id/assign-trainer', [
+  auth,
+  requireSuperAdmin,
+  body('trainerId').isUUID().withMessage('Valid trainer ID is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const course = await Course.findByPk(req.params.id);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found.' });
+    }
+
+    const { trainerId } = req.body;
+
+    // Verify the trainer exists and is actually a trainer
+    const trainer = await User.findByPk(trainerId);
+    if (!trainer) {
+      return res.status(404).json({ error: 'Trainer not found.' });
+    }
+
+    if (trainer.role !== 'trainer') {
+      return res.status(400).json({ error: 'Selected user is not a trainer.' });
+    }
+
+    if (!trainer.isActive) {
+      return res.status(400).json({ error: 'Selected trainer account is inactive.' });
+    }
+
+    // Update the course with the new trainer
+    await course.update({ trainerId });
+
+    const updatedCourse = await Course.findByPk(course.id, {
+      include: [
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'firstName', 'lastName', 'avatar', 'email']
+        }
+      ]
+    });
+
+    res.json({
+      message: 'Trainer assigned successfully.',
+      course: updatedCourse
+    });
+  } catch (error) {
+    console.error('Assign trainer error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   GET /api/courses/trainers/available
+// @desc    Get available trainers for assignment (Super Admin only)
+// @access  Private (Super Admin)
+router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('Get available trainers request from user:', req.user.id, 'role:', req.user.role);
+    
+    const trainers = await User.findAll({
+      where: {
+        role: 'trainer',
+        isActive: true
+      },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'avatar'],
+      order: [['firstName', 'ASC'], ['lastName', 'ASC']]
+    });
+
+    console.log('Found trainers:', trainers.length);
+    res.json({ trainers });
+  } catch (error) {
+    console.error('Get available trainers error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // @route   GET /api/courses/stats/overview
 // @desc    Get course statistics (Super Admin or Trainer)
 // @access  Private

@@ -1,4 +1,4 @@
-CourseWorx v1.1.1 - Enhanced Course Content Management Interface
+CourseWorx v1.1.2 - Trainer Assignment System & Navigation Improvements
 ==========================================================
 
 This version adds comprehensive course content management and enrollment/subscriber functionality to the existing Course Management System.
@@ -110,6 +110,45 @@ MAJOR FEATURES IMPLEMENTED:
 - Attendance tracking
 - Assignment management
 - Database migrations and seeding
+
+NEW FEATURES IN v1.1.2:
+========================
+
+1. TRAINER ASSIGNMENT SYSTEM
+-----------------------------
+- Super Admin can assign trainers to courses
+- Trainer assignment modal with dropdown selection
+- Available trainers API endpoint with proper authentication
+- Real-time trainer assignment with immediate UI updates
+- Role-based access control (Super Admin only)
+- Comprehensive error handling and validation
+- Debug information for troubleshooting
+
+2. NAVIGATION REORGANIZATION
+-----------------------------
+- Moved logout and profile links to top-right user dropdown
+- Cleaned up sidebar navigation (Dashboard, Courses, Users only)
+- Modern user dropdown menu with avatar and role display
+- Click-outside-to-close functionality for dropdown
+- Responsive design for mobile and desktop
+- Improved user experience with better navigation hierarchy
+
+3. ENHANCED USER INTERFACE
+---------------------------
+- User avatar with initials in top-right corner
+- Dropdown menu with Profile and Logout options
+- Clean sidebar with only essential navigation items
+- Better visual hierarchy and spacing
+- Improved accessibility with proper ARIA attributes
+- Mobile-responsive dropdown menu
+
+4. DEBUGGING & TROUBLESHOOTING
+-------------------------------
+- Added comprehensive debug information for trainer assignment
+- Backend logging for trainer API requests
+- Frontend error handling and user feedback
+- Authentication and authorization debugging
+- API call monitoring and error tracking
 
 NEW FEATURES IN v1.1.1:
 ========================
@@ -347,5 +386,5 @@ DEPLOYMENT READINESS:
 This version (1.1.0) adds comprehensive course content management and enrollment/subscriber functionality to the existing Course Management System, providing a complete foundation for creating rich educational content and managing student enrollments.
 
 Release Date: [Current Date]
-Version: 1.1.1
+Version: 1.1.2
 Status: Production Ready 
