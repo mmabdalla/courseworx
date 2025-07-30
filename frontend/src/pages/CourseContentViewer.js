@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { useAuth } from '../contexts/AuthContext';
+import { useQuery, useMutation } from 'react-query';
 import { coursesAPI, courseContentAPI } from '../services/api';
 import {
   ArrowLeftIcon,
@@ -21,7 +20,6 @@ import toast from 'react-hot-toast';
 
 const CourseContentViewer = () => {
   const { id } = useParams();
-  const queryClient = useQueryClient();
   const [selectedContent, setSelectedContent] = useState(null);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResults, setQuizResults] = useState({});
@@ -100,16 +98,30 @@ const CourseContentViewer = () => {
     return labels[type] || 'Document';
   };
 
+  // Helper to resolve the file URL (uploaded or online)
+  const resolveFileUrl = (content) => {
+    // Prefer fileUrl, then url
+    let url = content.fileUrl || content.url || '';
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    // Otherwise, construct the full URL
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${url}`;
+  };
+
   const renderContent = (content) => {
+    const fileUrl = resolveFileUrl(content);
+    console.log('ContentViewer: resolved fileUrl:', fileUrl);
+
     switch (content.type) {
       case 'document':
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold">{content.title}</h3>
-              {content.fileUrl && (
+              {fileUrl && (
                 <a
-                  href={content.fileUrl}
+                  href={fileUrl}
                   download
                   className="btn-secondary flex items-center"
                 >
@@ -121,10 +133,10 @@ const CourseContentViewer = () => {
             {content.description && (
               <p className="text-gray-600">{content.description}</p>
             )}
-            {content.fileUrl ? (
+            {fileUrl ? (
               <div className="bg-gray-100 rounded-lg p-4">
                 <iframe
-                  src={content.fileUrl}
+                  src={fileUrl}
                   className="w-full h-96"
                   title={content.title}
                 />
@@ -145,10 +157,10 @@ const CourseContentViewer = () => {
             {content.description && (
               <p className="text-gray-600">{content.description}</p>
             )}
-            {content.fileUrl ? (
+            {fileUrl ? (
               <div className="text-center">
                 <img
-                  src={content.fileUrl}
+                  src={fileUrl}
                   alt={content.title}
                   className="max-w-full h-auto rounded-lg shadow-lg"
                 />
@@ -169,7 +181,7 @@ const CourseContentViewer = () => {
             {content.description && (
               <p className="text-gray-600">{content.description}</p>
             )}
-            {content.fileUrl ? (
+            {fileUrl ? (
               <div className="text-center">
                 <video
                   controls
@@ -179,7 +191,7 @@ const CourseContentViewer = () => {
                     handleVideoProgress(content.id, progress);
                   }}
                 >
-                  <source src={content.fileUrl} type="video/mp4" />
+                  <source src={fileUrl} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               </div>

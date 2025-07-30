@@ -481,6 +481,11 @@ router.get('/stats/overview', auth, async (req, res) => {
       whereClause.courseId = trainerCourses.map(c => c.id);
     }
 
+    // If trainee, only show their enrollments
+    if (req.user.role === 'trainee') {
+      whereClause.userId = req.user.id;
+    }
+
     const totalEnrollments = await Enrollment.count({ where: whereClause });
     const activeEnrollments = await Enrollment.count({ 
       where: { ...whereClause, status: 'active' } 
@@ -492,13 +497,49 @@ router.get('/stats/overview', auth, async (req, res) => {
       where: { ...whereClause, status: 'pending' } 
     });
 
+    // Get unique students count for trainers
+    let myStudents = 0;
+    if (req.user.role === 'trainer') {
+      const trainerCourses = await Course.findAll({
+        where: { trainerId: req.user.id },
+        attributes: ['id']
+      });
+      
+      if (trainerCourses.length > 0) {
+        const uniqueStudents = await Enrollment.findAll({
+          where: { 
+            courseId: trainerCourses.map(c => c.id),
+            status: { [require('sequelize').Op.in]: ['active', 'completed'] }
+          },
+          attributes: ['userId'],
+          group: ['userId']
+        });
+        myStudents = uniqueStudents.length;
+      }
+    }
+
+    // Get my enrollments count for trainees
+    let myEnrollments = 0;
+    let completedCourses = 0;
+    if (req.user.role === 'trainee') {
+      myEnrollments = await Enrollment.count({ 
+        where: { userId: req.user.id } 
+      });
+      completedCourses = await Enrollment.count({ 
+        where: { userId: req.user.id, status: 'completed' } 
+      });
+    }
+
     res.json({
       stats: {
         totalEnrollments,
         activeEnrollments,
         completedEnrollments,
         pendingEnrollments,
-        cancelledEnrollments: totalEnrollments - activeEnrollments - completedEnrollments - pendingEnrollments
+        cancelledEnrollments: totalEnrollments - activeEnrollments - completedEnrollments - pendingEnrollments,
+        myStudents,
+        myEnrollments,
+        completedCourses
       }
     });
   } catch (error) {

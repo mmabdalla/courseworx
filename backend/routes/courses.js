@@ -471,12 +471,22 @@ router.get('/stats/overview', auth, async (req, res) => {
       where: { ...whereClause, isFeatured: true } 
     });
 
+    // For trainers, provide specific stats
+    let myCourses = 0;
+    let myPublishedCourses = 0;
+    if (req.user.role === 'trainer') {
+      myCourses = totalCourses;
+      myPublishedCourses = publishedCourses;
+    }
+
     res.json({
       stats: {
         totalCourses,
         publishedCourses,
         unpublishedCourses: totalCourses - publishedCourses,
-        featuredCourses
+        featuredCourses,
+        myCourses,
+        myPublishedCourses
       }
     });
   } catch (error) {
