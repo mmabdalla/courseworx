@@ -93,8 +93,28 @@ const Dashboard = () => {
     { enabled: isSuperAdmin || isTrainer }
   );
 
+  // New queries for real counts
+  const { data: enrollmentStats, isLoading: enrollmentStatsLoading } = useQuery(
+    ['enrollments', 'stats'],
+    () => enrollmentsAPI.getStats(),
+    { enabled: isSuperAdmin || isTrainer }
+  );
+
+  const { data: trainerCourseStats, isLoading: trainerCourseStatsLoading } = useQuery(
+    ['courses', 'trainer-stats'],
+    () => coursesAPI.getStats(),
+    { enabled: isTrainer }
+  );
+
+  const { data: traineeEnrollmentStats, isLoading: traineeEnrollmentStatsLoading } = useQuery(
+    ['enrollments', 'trainee-stats'],
+    () => enrollmentsAPI.getStats(),
+    { enabled: isTrainee }
+  );
+
   const isLoading = coursesLoading || enrollmentsLoading || attendanceLoading || 
-                   userStatsLoading || courseStatsLoading;
+                   userStatsLoading || courseStatsLoading || enrollmentStatsLoading ||
+                   trainerCourseStatsLoading || traineeEnrollmentStatsLoading;
 
   if (isLoading) {
     return <LoadingSpinner size="lg" className="mt-8" />;
@@ -182,6 +202,10 @@ const Dashboard = () => {
               <span className="text-sm font-medium">{courseStats?.stats?.publishedCourses || 0}</span>
             </div>
             <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Total Enrollments</span>
+              <span className="text-sm font-medium">{enrollmentStats?.stats?.totalEnrollments || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Featured Courses</span>
               <span className="text-sm font-medium">{courseStats?.stats?.featuredCourses || 0}</span>
             </div>
@@ -202,7 +226,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">My Courses</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {courseStats?.stats?.totalCourses || 0}
+                {trainerCourseStats?.stats?.myCourses || 0}
               </p>
             </div>
           </div>
@@ -216,7 +240,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Published</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {courseStats?.stats?.publishedCourses || 0}
+                {trainerCourseStats?.stats?.myPublishedCourses || 0}
               </p>
             </div>
           </div>
@@ -228,10 +252,9 @@ const Dashboard = () => {
               <UsersIcon className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Students</p>
+              <p className="text-sm font-medium text-gray-500">My Students</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {/* Add total students count */}
-                0
+                {enrollmentStats?.stats?.myStudents || 0}
               </p>
             </div>
           </div>
@@ -289,7 +312,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Enrolled Courses</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {enrollmentsData?.enrollments?.length || 0}
+                {traineeEnrollmentStats?.stats?.myEnrollments || 0}
               </p>
             </div>
           </div>
@@ -315,9 +338,9 @@ const Dashboard = () => {
               <ChartBarIcon className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Sessions</p>
+              <p className="text-sm font-medium text-gray-500">Completed Courses</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {attendanceStats?.stats?.totalSessions || 0}
+                {traineeEnrollmentStats?.stats?.completedCourses || 0}
               </p>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { courseContentAPI } from '../services/api';
 import {
   PlusIcon, DocumentIcon, PhotoIcon, VideoCameraIcon, DocumentTextIcon,
   QuestionMarkCircleIcon, AcademicCapIcon, TrashIcon, PencilIcon,
-  ArrowLeftIcon, XMarkIcon, PlusIcon as AddIcon
+  ArrowLeftIcon, XMarkIcon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -25,8 +25,8 @@ const CourseContent = () => {
   const [contentForm, setContentForm] = useState({
     title: '', description: '', type: 'document', order: 0, points: 0,
     isRequired: true, isPublished: true, articleContent: '',
+    url: '', // <-- Add url field for image/video
   });
-  const [uploadingFile, setUploadingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   // Quiz questions state
@@ -99,7 +99,7 @@ const CourseContent = () => {
   );
 
   const uploadFileMutation = useMutation(
-    ({ file, contentType }) => courseContentAPI.uploadFile(id, file, contentType),
+    ({ file, contentType, contentId }) => courseContentAPI.uploadFile(id, contentType, file, contentId),
     {
       onSuccess: (data) => {
         setContentForm(prev => ({
@@ -108,12 +108,10 @@ const CourseContent = () => {
           fileSize: data.fileSize,
           fileType: data.fileType
         }));
-        setUploadingFile(false);
         setSelectedFile(null);
         toast.success('File uploaded successfully!');
       },
       onError: (error) => {
-        setUploadingFile(false);
         toast.error(error.response?.data?.error || 'Failed to upload file');
       },
     }
@@ -156,13 +154,19 @@ const CourseContent = () => {
     setContentForm({
       title: '', description: '', type: 'document', order: 0, points: 0,
       isRequired: true, isPublished: true, articleContent: '',
+      url: '', // <-- Add url field for image/video
     });
     setSelectedFile(null);
   };
 
   const handleAddContent = async (e) => {
     e.preventDefault();
-    createContentMutation.mutate(contentForm);
+    let data = { ...contentForm };
+    // If image/video and url is provided, set fileUrl
+    if ((contentForm.type === 'image' || contentForm.type === 'video') && contentForm.url) {
+      data.fileUrl = contentForm.url;
+    }
+    createContentMutation.mutate(data);
   };
 
   const handleEditContent = async (e) => {
@@ -190,21 +194,22 @@ const CourseContent = () => {
       isRequired: content.isRequired,
       isPublished: content.isPublished,
       articleContent: content.articleContent || '',
+      url: content.fileUrl || '', // <-- Set url for image/video
     });
     setShowEditContentModal(true);
   };
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
-    setUploadingFile(true);
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('contentType', contentForm.type);
-    uploadFileMutation.mutate({ file: formData, contentType: contentForm.type });
+    uploadFileMutation.mutate({ file: selectedFile, contentType: contentForm.type });
   };
 
   const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
+    const file = e.target.files[0];
+    setSelectedFile(file);
+    if (file) {
+      handleFileUpload(); // Auto-upload on file select
+    }
   };
 
   const getContentTypeIcon = (type) => {
@@ -602,16 +607,25 @@ const CourseContent = () => {
                   {selectedFile && (
                     <div className="mt-2">
                       <p className="text-sm text-gray-600">Selected: {selectedFile.name}</p>
-                      <button
-                        type="button"
-                        onClick={handleFileUpload}
-                        disabled={uploadingFile}
-                        className="btn-secondary mt-2"
-                      >
-                        {uploadingFile ? 'Uploading...' : 'Upload File'}
-                      </button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {['image', 'video'].includes(contentForm.type) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Online URL (optional)
+                  </label>
+                  <input
+                    type="url"
+                    name="url"
+                    value={contentForm.url}
+                    onChange={handleContentFormChange}
+                    className="input-field w-full"
+                    placeholder={`Paste a direct ${contentForm.type} URL (e.g. https://...)`}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">If provided, this will be used instead of an uploaded file.</p>
                 </div>
               )}
 
@@ -950,7 +964,7 @@ const CourseContent = () => {
                   onClick={addQuestion}
                   className="btn-primary w-full"
                 >
-                  <AddIcon className="h-4 w-4 mr-2" />
+                  <PlusIcon className="h-4 w-4 mr-2" />
                   Add Question
                 </button>
               </div>
