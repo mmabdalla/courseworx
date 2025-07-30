@@ -55,41 +55,41 @@ const Layout = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-        {/* Logo and Home Icon */}
-        <div className="flex items-center space-x-4">
+        {/* Logo and Navigation */}
+        <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-2">
-            <img src="/courseworx-logo.png" alt="CourseWorx" className="h-8 w-auto" />
-            <h1 className="text-xl font-bold text-gray-900">CourseWorx</h1>
+            <img src="/images/cx-logo.png" alt="CourseWorx" className="h-8 w-auto" />
           </div>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <HomeIcon className="h-5 w-5" />
-            <span className="hidden sm:inline text-sm font-medium">Home</span>
-          </button>
-        </div>
-
-        {/* Navigation Items */}
-        <div className="flex flex-1 items-center justify-center space-x-8">
-          {navigation.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                isActive(item.href)
-                  ? 'bg-primary-100 text-primary-900'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+          
+          {/* Navigation Items */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <item.icon className="h-5 w-5" />
-              <span className="hidden sm:inline">{item.name}</span>
-            </a>
-          ))}
+              <HomeIcon className="h-5 w-5" />
+              <span className="hidden sm:inline text-sm font-medium">Home</span>
+            </button>
+            
+            {navigation.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                className={`flex items-center space-x-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive(item.href)
+                    ? 'bg-primary-100 text-primary-900'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="hidden sm:inline">{item.name}</span>
+              </a>
+            ))}
+          </div>
         </div>
 
         {/* User dropdown menu */}
-        <div className="flex items-center gap-x-4 lg:gap-x-6">
+        <div className="flex flex-1 items-center justify-end gap-x-4 lg:gap-x-6">
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
           
           <div className="relative user-menu">

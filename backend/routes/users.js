@@ -219,10 +219,14 @@ router.delete('/:id', auth, requireSuperAdmin, async (req, res) => {
 // @access  Private (Super Admin)
 router.get('/stats/overview', auth, requireSuperAdmin, async (req, res) => {
   try {
+    console.log('User stats endpoint called by user:', req.user.id, req.user.role);
+    
     const totalUsers = await User.count();
     const activeUsers = await User.count({ where: { isActive: true } });
     const trainers = await User.count({ where: { role: 'trainer' } });
     const trainees = await User.count({ where: { role: 'trainee' } });
+
+    console.log('User stats calculated:', { totalUsers, activeUsers, trainers, trainees });
 
     res.json({
       stats: {
