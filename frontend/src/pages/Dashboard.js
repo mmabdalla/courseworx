@@ -84,13 +84,40 @@ const Dashboard = () => {
   const { data: userStats, isLoading: userStatsLoading } = useQuery(
     ['users', 'stats'],
     () => usersAPI.getStats(),
-    { enabled: isSuperAdmin }
+    { 
+      enabled: isSuperAdmin,
+      onSuccess: (data) => {
+        console.log('User stats response:', data);
+        console.log('User stats data structure:', {
+          totalUsers: data?.stats?.totalUsers,
+          trainers: data?.stats?.trainers,
+          trainees: data?.stats?.trainees
+        });
+      },
+      onError: (error) => {
+        console.error('User stats error:', error);
+        console.error('User stats error response:', error.response);
+      }
+    }
   );
 
   const { data: courseStats, isLoading: courseStatsLoading } = useQuery(
     ['courses', 'stats'],
     () => coursesAPI.getStats(),
-    { enabled: isSuperAdmin || isTrainer }
+    { 
+      enabled: isSuperAdmin || isTrainer,
+      onSuccess: (data) => {
+        console.log('Course stats response:', data);
+        console.log('Course stats data structure:', {
+          totalCourses: data?.stats?.totalCourses,
+          publishedCourses: data?.stats?.publishedCourses
+        });
+      },
+      onError: (error) => {
+        console.error('Course stats error:', error);
+        console.error('Course stats error response:', error.response);
+      }
+    }
   );
 
   // New queries for real counts
@@ -119,6 +146,19 @@ const Dashboard = () => {
   if (isLoading) {
     return <LoadingSpinner size="lg" className="mt-8" />;
   }
+
+  // Debug section to show raw API responses
+  const debugSection = (
+    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <h3 className="text-lg font-medium text-yellow-800 mb-2">Debug Information</h3>
+      <div className="text-sm text-yellow-700">
+        <p><strong>User Stats:</strong> {JSON.stringify(userStats)}</p>
+        <p><strong>Course Stats:</strong> {JSON.stringify(courseStats)}</p>
+        <p><strong>User Role:</strong> {user?.role}</p>
+        <p><strong>Is Super Admin:</strong> {isSuperAdmin ? 'Yes' : 'No'}</p>
+      </div>
+    </div>
+  );
 
   const renderSuperAdminDashboard = () => (
     <div className="space-y-6">
@@ -396,6 +436,9 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">Welcome back, {user?.firstName}! Here's what's happening.</p>
       </div>
+
+      {/* Debug section */}
+      {debugSection}
 
       {isSuperAdmin && renderSuperAdminDashboard()}
       {isTrainer && renderTrainerDashboard()}

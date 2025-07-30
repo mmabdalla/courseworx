@@ -458,6 +458,8 @@ router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
 // @access  Private
 router.get('/stats/overview', auth, async (req, res) => {
   try {
+    console.log('Course stats endpoint called by user:', req.user.id, req.user.role);
+    
     const whereClause = {};
     if (req.user.role === 'trainer') {
       whereClause.trainerId = req.user.id;
@@ -470,6 +472,8 @@ router.get('/stats/overview', auth, async (req, res) => {
     const featuredCourses = await Course.count({ 
       where: { ...whereClause, isFeatured: true } 
     });
+
+    console.log('Course stats calculated:', { totalCourses, publishedCourses, featuredCourses, whereClause });
 
     // For trainers, provide specific stats
     let myCourses = 0;
