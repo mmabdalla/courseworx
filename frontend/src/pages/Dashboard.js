@@ -164,17 +164,17 @@ const Dashboard = () => {
         <p><strong>Is Super Admin:</strong> {isSuperAdmin ? 'Yes' : 'No'}</p>
         <p><strong>Card Values:</strong></p>
         <ul className="ml-4">
-          <li>Total Users: {userStats?.stats?.totalUsers} (type: {typeof userStats?.stats?.totalUsers})</li>
-          <li>Trainers: {userStats?.stats?.trainers} (type: {typeof userStats?.stats?.trainers})</li>
-          <li>Trainees: {userStats?.stats?.trainees} (type: {typeof userStats?.stats?.trainees})</li>
-          <li>Total Courses: {courseStats?.stats?.totalCourses} (type: {typeof courseStats?.stats?.totalCourses})</li>
+          <li>Total Users: {userStats?.data?.stats?.totalUsers} (type: {typeof userStats?.data?.stats?.totalUsers})</li>
+          <li>Trainers: {userStats?.data?.stats?.trainers} (type: {typeof userStats?.data?.stats?.trainers})</li>
+          <li>Trainees: {userStats?.data?.stats?.trainees} (type: {typeof userStats?.data?.stats?.trainees})</li>
+          <li>Total Courses: {courseStats?.data?.stats?.totalCourses} (type: {typeof courseStats?.data?.stats?.totalCourses})</li>
         </ul>
         <p><strong>Direct Test Values:</strong></p>
         <ul className="ml-4">
-          <li>userStats?.stats?.totalUsers: "{userStats?.stats?.totalUsers}"</li>
-          <li>userStats?.stats?.trainers: "{userStats?.stats?.trainers}"</li>
-          <li>userStats?.stats?.trainees: "{userStats?.stats?.trainees}"</li>
-          <li>courseStats?.stats?.totalCourses: "{courseStats?.stats?.totalCourses}"</li>
+          <li>userStats?.data?.stats?.totalUsers: "{userStats?.data?.stats?.totalUsers}"</li>
+          <li>userStats?.data?.stats?.trainers: "{userStats?.data?.stats?.trainers}"</li>
+          <li>userStats?.data?.stats?.trainees: "{userStats?.data?.stats?.trainees}"</li>
+          <li>courseStats?.data?.stats?.totalCourses: "{courseStats?.data?.stats?.totalCourses}"</li>
         </ul>
         <p><strong>Loading States:</strong></p>
         <ul className="ml-4">
@@ -189,10 +189,10 @@ const Dashboard = () => {
     console.log('Rendering SuperAdmin dashboard with data:', {
       userStats,
       courseStats,
-      totalUsers: userStats?.stats?.totalUsers,
-      trainers: userStats?.stats?.trainers,
-      trainees: userStats?.stats?.trainees,
-      totalCourses: courseStats?.stats?.totalCourses
+      totalUsers: userStats?.data?.stats?.totalUsers,
+      trainers: userStats?.data?.stats?.trainers,
+      trainees: userStats?.data?.stats?.trainees,
+      totalCourses: courseStats?.data?.stats?.totalCourses
     });
 
     return (
@@ -201,10 +201,10 @@ const Dashboard = () => {
         <div className="card bg-red-50 border-red-200">
           <h3 className="text-lg font-medium text-red-800 mb-2">TEST CARD - Raw Data</h3>
           <div className="text-sm text-red-700">
-            <p>userStats?.stats?.totalUsers: {userStats?.stats?.totalUsers}</p>
-            <p>userStats?.stats?.trainers: {userStats?.stats?.trainers}</p>
-            <p>userStats?.stats?.trainees: {userStats?.stats?.trainees}</p>
-            <p>courseStats?.stats?.totalCourses: {courseStats?.stats?.totalCourses}</p>
+            <p>userStats?.data?.stats?.totalUsers: {userStats?.data?.stats?.totalUsers}</p>
+            <p>userStats?.data?.stats?.trainers: {userStats?.data?.stats?.trainers}</p>
+            <p>userStats?.data?.stats?.trainees: {userStats?.data?.stats?.trainees}</p>
+            <p>courseStats?.data?.stats?.totalCourses: {courseStats?.data?.stats?.totalCourses}</p>
           </div>
         </div>
 
@@ -217,7 +217,7 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Users</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {userStats?.stats?.totalUsers || 0}
+                  {userStats?.data?.stats?.totalUsers || 0}
                 </p>
               </div>
             </div>
@@ -231,7 +231,7 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Trainers</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {userStats?.stats?.trainers || 0}
+                  {userStats?.data?.stats?.trainers || 0}
                 </p>
               </div>
             </div>
@@ -245,7 +245,7 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Trainees</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {userStats?.stats?.trainees || 0}
+                  {userStats?.data?.stats?.trainees || 0}
                 </p>
               </div>
             </div>
@@ -259,7 +259,7 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Total Courses</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {courseStats?.stats?.totalCourses || 0}
+                  {courseStats?.data?.stats?.totalCourses || 0}
                 </p>
               </div>
             </div>
@@ -281,19 +281,19 @@ const Dashboard = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Active Users</span>
-                <span className="text-sm font-medium">{userStats?.stats?.activeUsers || 0}</span>
+                <span className="text-sm font-medium">{userStats?.data?.stats?.activeUsers || 0}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Published Courses</span>
-                <span className="text-sm font-medium">{courseStats?.stats?.publishedCourses || 0}</span>
+                <span className="text-sm font-medium">{courseStats?.data?.stats?.publishedCourses || 0}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total Enrollments</span>
-                <span className="text-sm font-medium">{enrollmentStats?.stats?.totalEnrollments || 0}</span>
+                <span className="text-sm font-medium">{enrollmentStats?.data?.stats?.totalEnrollments || 0}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Featured Courses</span>
-                <span className="text-sm font-medium">{courseStats?.stats?.featuredCourses || 0}</span>
+                <span className="text-sm font-medium">{courseStats?.data?.stats?.featuredCourses || 0}</span>
               </div>
             </div>
           </div>
@@ -313,7 +313,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">My Courses</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {trainerCourseStats?.stats?.myCourses || 0}
+                {trainerCourseStats?.data?.stats?.myCourses || 0}
               </p>
             </div>
           </div>
@@ -327,7 +327,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Published</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {trainerCourseStats?.stats?.myPublishedCourses || 0}
+                {trainerCourseStats?.data?.stats?.myPublishedCourses || 0}
               </p>
             </div>
           </div>
@@ -341,7 +341,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">My Students</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {enrollmentStats?.stats?.myStudents || 0}
+                {enrollmentStats?.data?.stats?.myStudents || 0}
               </p>
             </div>
           </div>
@@ -399,7 +399,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Enrolled Courses</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {traineeEnrollmentStats?.stats?.myEnrollments || 0}
+                {traineeEnrollmentStats?.data?.stats?.myEnrollments || 0}
               </p>
             </div>
           </div>
@@ -413,7 +413,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Attendance Rate</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {attendanceStats?.stats?.attendanceRate || 0}%
+                {attendanceStats?.data?.stats?.attendanceRate || 0}%
               </p>
             </div>
           </div>
@@ -427,7 +427,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Completed Courses</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {traineeEnrollmentStats?.stats?.completedCourses || 0}
+                {traineeEnrollmentStats?.data?.stats?.completedCourses || 0}
               </p>
             </div>
           </div>
