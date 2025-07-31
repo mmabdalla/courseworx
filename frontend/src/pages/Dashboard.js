@@ -93,11 +93,14 @@ const Dashboard = () => {
           trainers: data?.stats?.trainers,
           trainees: data?.stats?.trainees
         });
+        console.log('Raw userStats object:', userStats);
       },
       onError: (error) => {
         console.error('User stats error:', error);
         console.error('User stats error response:', error.response);
-      }
+      },
+      refetchOnWindowFocus: false,
+      staleTime: 0
     }
   );
 
@@ -112,11 +115,14 @@ const Dashboard = () => {
           totalCourses: data?.stats?.totalCourses,
           publishedCourses: data?.stats?.publishedCourses
         });
+        console.log('Raw courseStats object:', courseStats);
       },
       onError: (error) => {
         console.error('Course stats error:', error);
         console.error('Course stats error response:', error.response);
-      }
+      },
+      refetchOnWindowFocus: false,
+      staleTime: 0
     }
   );
 
@@ -163,6 +169,18 @@ const Dashboard = () => {
           <li>Trainees: {userStats?.stats?.trainees} (type: {typeof userStats?.stats?.trainees})</li>
           <li>Total Courses: {courseStats?.stats?.totalCourses} (type: {typeof courseStats?.stats?.totalCourses})</li>
         </ul>
+        <p><strong>Direct Test Values:</strong></p>
+        <ul className="ml-4">
+          <li>userStats?.stats?.totalUsers: "{userStats?.stats?.totalUsers}"</li>
+          <li>userStats?.stats?.trainers: "{userStats?.stats?.trainers}"</li>
+          <li>userStats?.stats?.trainees: "{userStats?.stats?.trainees}"</li>
+          <li>courseStats?.stats?.totalCourses: "{courseStats?.stats?.totalCourses}"</li>
+        </ul>
+        <p><strong>Loading States:</strong></p>
+        <ul className="ml-4">
+          <li>userStatsLoading: {userStatsLoading ? 'true' : 'false'}</li>
+          <li>courseStatsLoading: {courseStatsLoading ? 'true' : 'false'}</li>
+        </ul>
       </div>
     </div>
   );
@@ -179,6 +197,17 @@ const Dashboard = () => {
 
     return (
       <div className="space-y-6">
+        {/* Test Card to verify data */}
+        <div className="card bg-red-50 border-red-200">
+          <h3 className="text-lg font-medium text-red-800 mb-2">TEST CARD - Raw Data</h3>
+          <div className="text-sm text-red-700">
+            <p>userStats?.stats?.totalUsers: {userStats?.stats?.totalUsers}</p>
+            <p>userStats?.stats?.trainers: {userStats?.stats?.trainers}</p>
+            <p>userStats?.stats?.trainees: {userStats?.stats?.trainees}</p>
+            <p>courseStats?.stats?.totalCourses: {courseStats?.stats?.totalCourses}</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="card">
             <div className="flex items-center">
