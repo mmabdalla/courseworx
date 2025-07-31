@@ -156,104 +156,122 @@ const Dashboard = () => {
         <p><strong>Course Stats:</strong> {JSON.stringify(courseStats)}</p>
         <p><strong>User Role:</strong> {user?.role}</p>
         <p><strong>Is Super Admin:</strong> {isSuperAdmin ? 'Yes' : 'No'}</p>
+        <p><strong>Card Values:</strong></p>
+        <ul className="ml-4">
+          <li>Total Users: {userStats?.stats?.totalUsers} (type: {typeof userStats?.stats?.totalUsers})</li>
+          <li>Trainers: {userStats?.stats?.trainers} (type: {typeof userStats?.stats?.trainers})</li>
+          <li>Trainees: {userStats?.stats?.trainees} (type: {typeof userStats?.stats?.trainees})</li>
+          <li>Total Courses: {courseStats?.stats?.totalCourses} (type: {typeof courseStats?.stats?.totalCourses})</li>
+        </ul>
       </div>
     </div>
   );
 
-  const renderSuperAdminDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <UsersIcon className="h-8 w-8 text-primary-600" />
+  const renderSuperAdminDashboard = () => {
+    console.log('Rendering SuperAdmin dashboard with data:', {
+      userStats,
+      courseStats,
+      totalUsers: userStats?.stats?.totalUsers,
+      trainers: userStats?.stats?.trainers,
+      trainees: userStats?.stats?.trainees,
+      totalCourses: courseStats?.stats?.totalCourses
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UsersIcon className="h-8 w-8 text-primary-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Users</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {userStats?.stats?.totalUsers || 0}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Users</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {userStats?.stats?.totalUsers || 0}
-              </p>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <AcademicCapIcon className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Trainers</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {userStats?.stats?.trainers || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UserGroupIcon className="h-8 w-8 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Trainees</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {userStats?.stats?.trainees || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <BookOpenIcon className="h-8 w-8 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Courses</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {courseStats?.stats?.totalCourses || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <AcademicCapIcon className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Trainers</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {userStats?.stats?.trainers || 0}
-              </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="card">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Users</h3>
+            <div className="space-y-3">
+              {/* Add recent users list here */}
+              <p className="text-gray-500 text-sm">No recent users to display</p>
             </div>
           </div>
-        </div>
+          <SliderImageUpload />
 
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <UserGroupIcon className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Trainees</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {userStats?.stats?.trainees || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <BookOpenIcon className="h-8 w-8 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Courses</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {courseStats?.stats?.totalCourses || 0}
-              </p>
+          <div className="card">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">System Overview</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Active Users</span>
+                <span className="text-sm font-medium">{userStats?.stats?.activeUsers || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Published Courses</span>
+                <span className="text-sm font-medium">{courseStats?.stats?.publishedCourses || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Total Enrollments</span>
+                <span className="text-sm font-medium">{enrollmentStats?.stats?.totalEnrollments || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Featured Courses</span>
+                <span className="text-sm font-medium">{courseStats?.stats?.featuredCourses || 0}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Users</h3>
-          <div className="space-y-3">
-            {/* Add recent users list here */}
-            <p className="text-gray-500 text-sm">No recent users to display</p>
-          </div>
-        </div>
-        <SliderImageUpload />
-
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">System Overview</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Active Users</span>
-              <span className="text-sm font-medium">{userStats?.stats?.activeUsers || 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Published Courses</span>
-              <span className="text-sm font-medium">{courseStats?.stats?.publishedCourses || 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Total Enrollments</span>
-              <span className="text-sm font-medium">{enrollmentStats?.stats?.totalEnrollments || 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Featured Courses</span>
-              <span className="text-sm font-medium">{courseStats?.stats?.featuredCourses || 0}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderTrainerDashboard = () => (
     <div className="space-y-6">
