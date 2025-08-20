@@ -437,6 +437,8 @@ router.put('/:id/assign-trainer', [
 // @access  Private (Super Admin)
 router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
   try {
+    console.log('Available trainers endpoint called by user:', req.user.id, req.user.role);
+    
     const trainers = await User.findAll({
       where: {
         role: 'trainer',
@@ -445,6 +447,8 @@ router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
       attributes: ['id', 'firstName', 'lastName', 'email', 'avatar'],
       order: [['firstName', 'ASC'], ['lastName', 'ASC']]
     });
+
+    console.log('Available trainers found:', trainers.length, trainers.map(t => ({ id: t.id, name: `${t.firstName} ${t.lastName}`, email: t.email })));
 
     res.json({ trainers });
   } catch (error) {

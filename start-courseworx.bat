@@ -46,6 +46,37 @@ if not exist "frontend\node_modules" (
 )
 
 echo.
+
+REM Check for port conflicts
+echo 🔍 Checking for port conflicts...
+
+netstat -an | findstr ":5000" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ⚠️  Port 5000 is already in use
+    echo    This might be another CourseWorx instance or different application
+    set /p choice="Do you want to continue anyway? (y/N): "
+    if /i not "%choice%"=="y" (
+        echo Stopping startup process...
+        pause
+        exit /b 1
+    )
+)
+
+netstat -an | findstr ":3000" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ⚠️  Port 3000 is already in use
+    echo    This might be another CourseWorx instance or different application
+    set /p choice="Do you want to continue anyway? (y/N): "
+    if /i not "%choice%"=="y" (
+        echo Stopping startup process...
+        pause
+        exit /b 1
+    )
+)
+
+echo ✅ Port check completed
+echo.
+
 echo 🚀 Starting CourseWorx...
 echo.
 echo 📱 Frontend will be available at: http://localhost:3000
@@ -56,5 +87,11 @@ echo.
 
 REM Start both frontend and backend
 npm run start
+if %errorlevel% neq 0 (
+    echo ❌ Error starting CourseWorx
+    echo Please check the error messages above and try again
+    pause
+    exit /b 1
+)
 
 pause 

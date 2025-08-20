@@ -132,6 +132,122 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/enrollments/course/:courseId/trainees
+// @desc    Get all trainees enrolled in a specific course
+// @access  Private (Course trainer or Super Admin)
+router.get('/course/:courseId/trainees', auth, async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { status, page = 1, limit = 20 } = req.query;
+    
+    const offset = (page - 1) * limit;
+    const whereClause = { courseId };
+    
+    if (status) whereClause.status = status;
+
+    // Check if course exists and user has permission
+    const course = await Course.findByPk(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found.' });
+    }
+
+    // Check if user is trainer of this course or super admin
+    if (req.user.role !== 'super_admin' && course.trainerId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to view trainees for this course.' });
+    }
+
+    const { count, rows: enrollments } = await Enrollment.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'avatar'],
+          where: { role: 'trainee' }
+        }
+      ],
+      order: [['enrolledAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      trainees: enrollments.map(e => ({
+        ...e.user.toJSON(),
+        enrollmentId: e.id,
+        status: e.status,
+        progress: e.progress,
+        enrolledAt: e.enrolledAt,
+        completedAt: e.completedAt
+      })),
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get course trainees error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   GET /api/enrollments/available-trainees
+// @desc    Get available trainees for course enrollment
+// @access  Private (Trainer or Super Admin)
+router.get('/available-trainees', auth, async (req, res) => {
+  try {
+    const { courseId, search, page = 1, limit = 20 } = req.query;
+    
+    const offset = (page - 1) * limit;
+    const whereClause = { role: 'trainee', isActive: true };
+    
+    if (search) {
+      whereClause[require('sequelize').Op.or] = [
+        { firstName: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { lastName: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { email: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { phone: { [require('sequelize').Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    // Get all trainees
+    const { count, rows: trainees } = await User.findAndCountAll({
+      where: whereClause,
+      attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'avatar'],
+      order: [['firstName', 'ASC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    // If courseId is provided, filter out already enrolled trainees
+    let availableTrainees = trainees;
+    if (courseId) {
+      const enrolledTraineeIds = await Enrollment.findAll({
+        where: { courseId },
+        attributes: ['userId']
+      });
+      
+      const enrolledIds = enrolledTraineeIds.map(e => e.userId);
+      availableTrainees = trainees.filter(t => !enrolledIds.includes(t.id));
+    }
+
+    res.json({
+      trainees: availableTrainees,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get available trainees error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // @route   GET /api/enrollments/:id
 // @desc    Get enrollment by ID
 // @access  Private
@@ -544,6 +660,208 @@ router.get('/stats/overview', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get enrollment stats error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   POST /api/enrollments/bulk
+// @desc    Bulk enroll trainees to a course (Trainer only)
+// @access  Private (Trainer or Super Admin)
+router.post('/bulk', [
+  auth,
+  body('courseId').isUUID(),
+  body('traineeIds').isArray({ min: 1 }),
+  body('traineeIds.*').isUUID(),
+  body('status').optional().isIn(['pending', 'active']),
+  body('notes').optional().isLength({ max: 1000 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { courseId, traineeIds, status = 'active', notes } = req.body;
+
+    // Check if course exists and user has permission
+    const course = await Course.findByPk(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found.' });
+    }
+
+    // Check if user is trainer of this course or super admin
+    if (req.user.role !== 'super_admin' && course.trainerId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to enroll trainees to this course.' });
+    }
+
+    // Check course capacity
+    if (course.maxStudents) {
+      const enrolledCount = await Enrollment.count({
+        where: { courseId, status: ['active', 'pending'] }
+      });
+      const remainingCapacity = course.maxStudents - enrolledCount;
+      if (traineeIds.length > remainingCapacity) {
+        return res.status(400).json({ 
+          error: `Course capacity exceeded. Only ${remainingCapacity} more trainees can be enrolled.` 
+        });
+      }
+    }
+
+    // Get existing trainees to avoid duplicates
+    const existingEnrollments = await Enrollment.findAll({
+      where: { 
+        courseId, 
+        userId: traineeIds 
+      },
+      attributes: ['userId']
+    });
+    const existingTraineeIds = existingEnrollments.map(e => e.userId);
+
+    // Filter out already enrolled trainees
+    const newTraineeIds = traineeIds.filter(id => !existingTraineeIds.includes(id));
+
+    if (newTraineeIds.length === 0) {
+      return res.status(400).json({ error: 'All selected trainees are already enrolled in this course.' });
+    }
+
+    // Create enrollments
+    const enrollments = await Promise.all(
+      newTraineeIds.map(traineeId => 
+        Enrollment.create({
+          userId: traineeId,
+          courseId,
+          status,
+          paymentStatus: course.price > 0 ? 'pending' : 'paid',
+          paymentAmount: course.price,
+          notes
+        })
+      )
+    );
+
+    // Get enrollment details with user and course info
+    const enrollmentsWithDetails = await Enrollment.findAll({
+      where: { id: enrollments.map(e => e.id) },
+      include: [
+        {
+          model: Course,
+          as: 'course',
+          include: [
+            {
+              model: User,
+              as: 'trainer',
+              attributes: ['id', 'firstName', 'lastName']
+            }
+          ]
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
+        }
+      ]
+    });
+
+    res.status(201).json({
+      message: `Successfully enrolled ${enrollments.length} trainees to the course.`,
+      enrollments: enrollmentsWithDetails,
+      skipped: existingTraineeIds.length
+    });
+  } catch (error) {
+    console.error('Bulk enrollment error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   POST /api/enrollments/assign
+// @desc    Assign a single trainee to a course (Trainer only)
+// @access  Private (Trainer or Super Admin)
+router.post('/assign', [
+  auth,
+  body('courseId').isUUID(),
+  body('traineeId').isUUID(),
+  body('status').optional().isIn(['pending', 'active']),
+  body('notes').optional().isLength({ max: 1000 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { courseId, traineeId, status = 'active', notes } = req.body;
+
+    // Check if course exists and user has permission
+    const course = await Course.findByPk(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found.' });
+    }
+
+    // Check if user is trainer of this course or super admin
+    if (req.user.role !== 'super_admin' && course.trainerId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to assign trainees to this course.' });
+    }
+
+    // Check if trainee exists
+    const trainee = await User.findByPk(traineeId);
+    if (!trainee || trainee.role !== 'trainee') {
+      return res.status(404).json({ error: 'Trainee not found.' });
+    }
+
+    // Check if already enrolled
+    const existingEnrollment = await Enrollment.findOne({
+      where: { userId: traineeId, courseId }
+    });
+
+    if (existingEnrollment) {
+      return res.status(400).json({ error: 'Trainee is already enrolled in this course.' });
+    }
+
+    // Check course capacity
+    if (course.maxStudents) {
+      const enrolledCount = await Enrollment.count({
+        where: { courseId, status: ['active', 'pending'] }
+      });
+      if (enrolledCount >= course.maxStudents) {
+        return res.status(400).json({ error: 'Course is at maximum capacity.' });
+      }
+    }
+
+    const enrollment = await Enrollment.create({
+      userId: traineeId,
+      courseId,
+      status,
+      paymentStatus: course.price > 0 ? 'pending' : 'paid',
+      paymentAmount: course.price,
+      notes
+    });
+
+    const enrollmentWithDetails = await Enrollment.findByPk(enrollment.id, {
+      include: [
+        {
+          model: Course,
+          as: 'course',
+          include: [
+            {
+              model: User,
+              as: 'trainer',
+              attributes: ['id', 'firstName', 'lastName']
+            }
+          ]
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'phone']
+        }
+      ]
+    });
+
+    res.status(201).json({
+      message: 'Trainee successfully assigned to course.',
+      enrollment: enrollmentWithDetails
+    });
+  } catch (error) {
+    console.error('Assign trainee error:', error);
     res.status(500).json({ error: 'Server error.' });
   }
 });

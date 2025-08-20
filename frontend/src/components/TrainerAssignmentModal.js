@@ -20,6 +20,12 @@ const TrainerAssignmentModal = ({ isOpen, onClose, courseId, currentTrainer }) =
     () => coursesAPI.getAvailableTrainers(),
     {
       enabled: isOpen,
+      onSuccess: (data) => {
+        console.log('Available trainers loaded:', data);
+        console.log('Data structure:', JSON.stringify(data, null, 2));
+        console.log('Data.trainers:', data?.trainers);
+        console.log('Data.trainers length:', data?.trainers?.length);
+      },
       onError: (error) => {
         console.error('Trainer loading error:', error);
         toast.error('Failed to load trainers');

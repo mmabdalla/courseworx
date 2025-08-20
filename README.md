@@ -171,8 +171,8 @@ cd ..
    DB_HOST=localhost
    DB_PORT=5432
    DB_NAME=courseworx
-   DB_USER=your_postgres_username
-   DB_PASSWORD=your_postgres_password
+   DB_USER=mabdalla
+   DB_PASSWORD=7ouDa-123q
    
    # JWT Configuration
    JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_random
