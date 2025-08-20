@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
+import TraineeLogin from './pages/TraineeLogin';
+import Setup from './pages/Setup';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
@@ -14,13 +16,19 @@ import LoadingSpinner from './components/LoadingSpinner';
 import CourseEdit from './pages/CourseEdit';
 import CourseContent from './pages/CourseContent';
 import CourseContentViewer from './pages/CourseContentViewer';
+import CourseEnrollment from './pages/CourseEnrollment';
 import Home from './pages/Home';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, setupRequired } = useAuth();
 
   if (loading) {
     return <LoadingSpinner />;
+  }
+
+  // If setup is required, redirect to setup
+  if (setupRequired) {
+    return <Navigate to="/setup" replace />;
   }
 
   if (!user) {
@@ -35,12 +43,34 @@ const PrivateRoute = ({ children, allowedRoles = [] }) => {
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading, setupRequired } = useAuth();
 
+  console.log('AppRoutes render - user:', user, 'loading:', loading, 'setupRequired:', setupRequired);
+
+  // Show loading while checking setup and auth status
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // If setup is required, show setup page
+  if (setupRequired) {
+    console.log('Setup required, showing setup page');
+    return (
+      <Routes>
+        <Route path="/setup" element={<Setup />} />
+        <Route path="*" element={<Navigate to="/setup" replace />} />
+      </Routes>
+    );
+  }
+
+  console.log('Setup not required, showing normal routes');
   return (
     <Routes>
       <Route path="/login" element={
         user ? <Navigate to="/dashboard" replace /> : <Login />
+      } />
+      <Route path="/trainee-login" element={
+        user ? <Navigate to="/dashboard" replace /> : <TraineeLogin />
       } />
       {/* Public homepage route */}
       <Route path="/" element={<Home />} />
@@ -65,9 +95,19 @@ const AppRoutes = () => {
             <CourseContent />
           </PrivateRoute>
         } />
+        <Route path="/courses/:id/enrollment" element={
+          <PrivateRoute allowedRoles={['super_admin', 'trainer']}>
+            <CourseEnrollment />
+          </PrivateRoute>
+        } />
         <Route path="/courses/:id/learn" element={
           <PrivateRoute>
             <CourseContentViewer />
+          </PrivateRoute>
+        } />
+        <Route path="/enrollments" element={
+          <PrivateRoute allowedRoles={['super_admin', 'trainer']}>
+            <CourseEnrollment />
           </PrivateRoute>
         } />
         <Route path="/users/import" element={

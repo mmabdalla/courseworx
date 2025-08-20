@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,13 +36,17 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  getCurrentUser: () => api.get('/auth/me'),
-  updateProfile: (data) => api.put('/auth/profile', data),
-  changePassword: (currentPassword, newPassword) => 
-    api.put('/auth/change-password', { currentPassword, newPassword }),
-  firstPasswordChange: (data) => api.put('/auth/first-password-change', data),
+  login: (identifier, password) => api.post('/auth/login', { identifier, password }),
+  traineeLogin: (credentials) => api.post('/auth/trainee-login', credentials),
+  checkEnrollment: () => api.post('/auth/check-enrollment'),
   register: (userData) => api.post('/auth/register', userData),
+  getCurrentUser: () => api.get('/auth/me'),
+  changePassword: (data) => api.put('/auth/change-password', data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
+  verifyToken: () => api.get('/auth/verify'),
+  setupStatus: () => api.get('/auth/setup-status'),
+  setup: (userData) => api.post('/auth/setup', userData)
 };
 
 // Users API
@@ -76,7 +80,7 @@ export const coursesAPI = {
   delete: (id) => api.delete(`/courses/${id}`),
   publish: (id, isPublished) => api.put(`/courses/${id}/publish`, { isPublished }),
   assignTrainer: (id, trainerId) => api.put(`/courses/${id}/assign-trainer`, { trainerId }),
-  getAvailableTrainers: () => api.get('/courses/trainers/available'),
+  getAvailableTrainers: () => api.get('/courses/trainers/available').then(res => res.data),
   getCategories: () => api.get('/courses/categories/all'),
   getStats: () => api.get('/courses/stats/overview'),
   uploadCourseImage: (courseName, file) => {
@@ -111,15 +115,19 @@ export const courseContentAPI = {
 
 // Enrollments API
 export const enrollmentsAPI = {
-  getAll: (params) => api.get('/enrollments', { params }),
+  getAll: (params) => api.get('/enrollments', { params }).then(res => res.data),
+  getMy: (params) => api.get('/enrollments/my', { params }).then(res => res.data),
+  getById: (id) => api.get(`/enrollments/${id}`).then(res => res.data),
   create: (data) => api.post('/enrollments', data),
-  getMy: (params) => api.get('/enrollments/my', { params }),
-  getById: (id) => api.get(`/enrollments/${id}`),
-  updateStatus: (id, data) => api.put(`/enrollments/${id}/status`, data),
-  updatePayment: (id, data) => api.put(`/enrollments/${id}/payment`, data),
-  updateProgress: (id, progress) => api.put(`/enrollments/${id}/progress`, { progress }),
-  cancel: (id) => api.delete(`/enrollments/${id}`),
+  update: (id, data) => api.put(`/enrollments/${id}`, data),
+  delete: (id) => api.delete(`/enrollments/${id}`),
+  updateStatus: (id, status, notes) => api.put(`/enrollments/${id}/status`, { status, notes }),
   getStats: () => api.get('/enrollments/stats/overview'),
+  // New enrollment management endpoints
+  bulkEnroll: (data) => api.post('/enrollments/bulk', data),
+  assignTrainee: (data) => api.post('/enrollments/assign', data),
+  getCourseTrainees: (courseId, params) => api.get(`/enrollments/course/${courseId}/trainees`, { params }).then(res => res.data),
+  getAvailableTrainees: (params) => api.get('/enrollments/available-trainees', { params }).then(res => res.data)
 };
 
 // Attendance API

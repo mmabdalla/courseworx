@@ -5,7 +5,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ const Login = () => {
     setError(''); // Clear previous errors
 
     try {
-      const result = await login(email, password);
+      const result = await login(identifier, password);
       if (result.success) {
         // Add a small delay to ensure the user sees the success message
         setTimeout(() => {
@@ -66,19 +66,19 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
+              <label htmlFor="identifier" className="sr-only">
+                Email or Phone
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="identifier"
+                name="identifier"
+                type="text"
+                autoComplete="identifier"
                 required
                 className="input-field rounded-t-lg"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email or Phone"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
             </div>
             <div className="relative">
@@ -142,17 +142,6 @@ const Login = () => {
                 'Sign in'
               )}
             </button>
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Demo Accounts:
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-gray-500">
-              <p>Super Admin: admin@courseworx.com / admin123</p>
-              <p>Trainer: trainer@courseworx.com / trainer123</p>
-              <p>Trainee: trainee@courseworx.com / trainee123</p>
-            </div>
           </div>
         </form>
       </div>

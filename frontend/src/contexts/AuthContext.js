@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -15,17 +15,39 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [setupRequired, setSetupRequired] = useState(false);
 
-  useEffect(() => {
-    checkAuth();
+  const checkSetupAndAuth = useCallback(async () => {
+    try {
+      // First check if setup is required
+      const setupResponse = await authAPI.setupStatus();
+      const { setupRequired: needsSetup } = setupResponse.data;
+      
+      if (needsSetup) {
+        setSetupRequired(true);
+        setLoading(false);
+        return;
+      }
+
+      // If setup is not required, check authentication
+      await checkAuth();
+    } catch (error) {
+      console.error('Setup and auth check failed:', error);
+      setLoading(false);
+    }
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
         const response = await authAPI.getCurrentUser();
-        setUser(response.data.user);
+        if (response.data && response.data.user) {
+          setUser(response.data.user);
+        } else {
+          // Token is invalid, remove it
+          localStorage.removeItem('token');
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -33,12 +55,16 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const login = async (email, password) => {
+  useEffect(() => {
+    checkSetupAndAuth();
+  }, [checkSetupAndAuth]);
+
+  const login = async (identifier, password) => {
     try {
-      console.log('Attempting login with email:', email);
-      const response = await authAPI.login(email, password);
+      console.log('Attempting login with identifier:', identifier);
+      const response = await authAPI.login(identifier, password);
       const { token, user } = response.data;
       
       console.log('Login successful, user:', user);
@@ -91,12 +117,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (userData) => {
+    console.log('updateUser called with:', userData);
     setUser(userData);
+    // If we have a user, setup is no longer required
+    if (userData) {
+      console.log('Setting setupRequired to false');
+      setSetupRequired(false);
+    }
   };
 
   const value = {
     user,
     loading,
+    setupRequired,
     login,
     logout,
     updateProfile,

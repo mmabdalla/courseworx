@@ -58,7 +58,9 @@ const Layout = () => {
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-2">
-            <img src="/images/cx-logo.png" alt="CourseWorx" className="h-8 w-auto" />
+            <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
+              <span className="text-sm font-bold text-white">CX</span>
+            </div>
           </div>
           
           {/* Navigation Items */}

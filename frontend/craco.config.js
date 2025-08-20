@@ -16,6 +16,17 @@ module.exports = {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        secure: false,
+        logLevel: 'debug',
+        onProxyReq: (proxyReq, req, res) => {
+          // Ensure proper content-type headers
+          if (req.body) {
+            const bodyData = JSON.stringify(req.body);
+            proxyReq.setHeader('Content-Type', 'application/json');
+            proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+            proxyReq.write(bodyData);
+          }
+        },
       },
     },
   },

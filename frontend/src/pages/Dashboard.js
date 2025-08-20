@@ -84,46 +84,13 @@ const Dashboard = () => {
   const { data: userStats, isLoading: userStatsLoading } = useQuery(
     ['users', 'stats'],
     () => usersAPI.getStats(),
-    { 
-      enabled: isSuperAdmin,
-      onSuccess: (data) => {
-        console.log('User stats response:', data);
-        console.log('User stats data structure:', {
-          totalUsers: data?.stats?.totalUsers,
-          trainers: data?.stats?.trainers,
-          trainees: data?.stats?.trainees
-        });
-        console.log('Raw userStats object:', userStats);
-      },
-      onError: (error) => {
-        console.error('User stats error:', error);
-        console.error('User stats error response:', error.response);
-      },
-      refetchOnWindowFocus: false,
-      staleTime: 0
-    }
+    { enabled: isSuperAdmin }
   );
 
   const { data: courseStats, isLoading: courseStatsLoading } = useQuery(
     ['courses', 'stats'],
     () => coursesAPI.getStats(),
-    { 
-      enabled: isSuperAdmin || isTrainer,
-      onSuccess: (data) => {
-        console.log('Course stats response:', data);
-        console.log('Course stats data structure:', {
-          totalCourses: data?.stats?.totalCourses,
-          publishedCourses: data?.stats?.publishedCourses
-        });
-        console.log('Raw courseStats object:', courseStats);
-      },
-      onError: (error) => {
-        console.error('Course stats error:', error);
-        console.error('Course stats error response:', error.response);
-      },
-      refetchOnWindowFocus: false,
-      staleTime: 0
-    }
+    { enabled: isSuperAdmin || isTrainer }
   );
 
   // New queries for real counts
@@ -153,154 +120,100 @@ const Dashboard = () => {
     return <LoadingSpinner size="lg" className="mt-8" />;
   }
 
-  // Debug section to show raw API responses
-  const debugSection = (
-    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <h3 className="text-lg font-medium text-yellow-800 mb-2">Debug Information</h3>
-      <div className="text-sm text-yellow-700">
-        <p><strong>User Stats:</strong> {JSON.stringify(userStats)}</p>
-        <p><strong>Course Stats:</strong> {JSON.stringify(courseStats)}</p>
-        <p><strong>User Role:</strong> {user?.role}</p>
-        <p><strong>Is Super Admin:</strong> {isSuperAdmin ? 'Yes' : 'No'}</p>
-        <p><strong>Card Values:</strong></p>
-        <ul className="ml-4">
-          <li>Total Users: {userStats?.data?.stats?.totalUsers} (type: {typeof userStats?.data?.stats?.totalUsers})</li>
-          <li>Trainers: {userStats?.data?.stats?.trainers} (type: {typeof userStats?.data?.stats?.trainers})</li>
-          <li>Trainees: {userStats?.data?.stats?.trainees} (type: {typeof userStats?.data?.stats?.trainees})</li>
-          <li>Total Courses: {courseStats?.data?.stats?.totalCourses} (type: {typeof courseStats?.data?.stats?.totalCourses})</li>
-        </ul>
-        <p><strong>Direct Test Values:</strong></p>
-        <ul className="ml-4">
-          <li>userStats?.data?.stats?.totalUsers: "{userStats?.data?.stats?.totalUsers}"</li>
-          <li>userStats?.data?.stats?.trainers: "{userStats?.data?.stats?.trainers}"</li>
-          <li>userStats?.data?.stats?.trainees: "{userStats?.data?.stats?.trainees}"</li>
-          <li>courseStats?.data?.stats?.totalCourses: "{courseStats?.data?.stats?.totalCourses}"</li>
-        </ul>
-        <p><strong>Loading States:</strong></p>
-        <ul className="ml-4">
-          <li>userStatsLoading: {userStatsLoading ? 'true' : 'false'}</li>
-          <li>courseStatsLoading: {courseStatsLoading ? 'true' : 'false'}</li>
-        </ul>
+  const renderSuperAdminDashboard = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UsersIcon className="h-8 w-8 text-primary-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Users</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {userStats?.data?.stats?.totalUsers || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <AcademicCapIcon className="h-8 w-8 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Trainers</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {userStats?.data?.stats?.trainers || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UserGroupIcon className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Trainees</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {userStats?.data?.stats?.trainees || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <BookOpenIcon className="h-8 w-8 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Courses</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {courseStats?.data?.stats?.totalCourses || 0}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  );
 
-  const renderSuperAdminDashboard = () => {
-    console.log('Rendering SuperAdmin dashboard with data:', {
-      userStats,
-      courseStats,
-      totalUsers: userStats?.data?.stats?.totalUsers,
-      trainers: userStats?.data?.stats?.trainers,
-      trainees: userStats?.data?.stats?.trainees,
-      totalCourses: courseStats?.data?.stats?.totalCourses
-    });
-
-    return (
-      <div className="space-y-6">
-        {/* Test Card to verify data */}
-        <div className="card bg-red-50 border-red-200">
-          <h3 className="text-lg font-medium text-red-800 mb-2">TEST CARD - Raw Data</h3>
-          <div className="text-sm text-red-700">
-            <p>userStats?.data?.stats?.totalUsers: {userStats?.data?.stats?.totalUsers}</p>
-            <p>userStats?.data?.stats?.trainers: {userStats?.data?.stats?.trainers}</p>
-            <p>userStats?.data?.stats?.trainees: {userStats?.data?.stats?.trainees}</p>
-            <p>courseStats?.data?.stats?.totalCourses: {courseStats?.data?.stats?.totalCourses}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Users</h3>
+          <div className="space-y-3">
+            {/* Add recent users list here */}
+            <p className="text-gray-500 text-sm">No recent users to display</p>
           </div>
         </div>
+        <SliderImageUpload />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UsersIcon className="h-8 w-8 text-primary-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Users</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {userStats?.data?.stats?.totalUsers || 0}
-                </p>
-              </div>
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">System Overview</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Active Users</span>
+              <span className="text-sm font-medium">{userStats?.data?.stats?.activeUsers || 0}</span>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <AcademicCapIcon className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Trainers</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {userStats?.data?.stats?.trainers || 0}
-                </p>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Published Courses</span>
+              <span className="text-sm font-medium">{courseStats?.data?.stats?.publishedCourses || 0}</span>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UserGroupIcon className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Trainees</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {userStats?.data?.stats?.trainees || 0}
-                </p>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Total Enrollments</span>
+              <span className="text-sm font-medium">{enrollmentStats?.data?.stats?.totalEnrollments || 0}</span>
             </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <BookOpenIcon className="h-8 w-8 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Courses</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {courseStats?.data?.stats?.totalCourses || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="card">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Users</h3>
-            <div className="space-y-3">
-              {/* Add recent users list here */}
-              <p className="text-gray-500 text-sm">No recent users to display</p>
-            </div>
-          </div>
-          <SliderImageUpload />
-
-          <div className="card">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">System Overview</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Active Users</span>
-                <span className="text-sm font-medium">{userStats?.data?.stats?.activeUsers || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Published Courses</span>
-                <span className="text-sm font-medium">{courseStats?.data?.stats?.publishedCourses || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Enrollments</span>
-                <span className="text-sm font-medium">{enrollmentStats?.data?.stats?.totalEnrollments || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Featured Courses</span>
-                <span className="text-sm font-medium">{courseStats?.data?.stats?.featuredCourses || 0}</span>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Featured Courses</span>
+              <span className="text-sm font-medium">{courseStats?.data?.stats?.featuredCourses || 0}</span>
             </div>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   const renderTrainerDashboard = () => (
     <div className="space-y-6">
@@ -483,9 +396,6 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600">Welcome back, {user?.firstName}! Here's what's happening.</p>
       </div>
-
-      {/* Debug section */}
-      {debugSection}
 
       {isSuperAdmin && renderSuperAdminDashboard()}
       {isTrainer && renderTrainerDashboard()}

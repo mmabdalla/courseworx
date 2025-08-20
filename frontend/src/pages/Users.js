@@ -436,8 +436,8 @@ const Users = () => {
                 <input type="email" name="email" value={userForm.email} onChange={handleFormChange} className="input-field w-full" required />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <input type="text" name="phone" value={userForm.phone} onChange={handleFormChange} className="input-field w-full" />
+                <label className="block text-sm font-medium mb-1">Phone <span className="text-red-500">*</span></label>
+                <input type="tel" name="phone" value={userForm.phone} onChange={handleFormChange} className="input-field w-full" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Role</label>

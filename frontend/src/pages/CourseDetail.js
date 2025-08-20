@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,8 @@ import {
   BookOpenIcon,
   CogIcon,
   EyeIcon,
+  UserPlusIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 import TrainerAssignmentModal from '../components/TrainerAssignmentModal';
@@ -21,7 +23,23 @@ const CourseDetail = () => {
   const { user, isTrainee, isTrainer, isSuperAdmin } = useAuth();
   const [enrolling, setEnrolling] = useState(false);
   const [showTrainerModal, setShowTrainerModal] = useState(false);
+  const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const queryClient = useQueryClient();
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowActionsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const { data: course, isLoading, error } = useQuery(
     ['course', id],
@@ -117,32 +135,79 @@ const CourseDetail = () => {
             <h1 className="text-3xl font-bold text-gray-900">{courseData.title}</h1>
             <p className="text-gray-600 mt-2">{courseData.shortDescription}</p>
           </div>
-          <div className="flex space-x-3">
-            <Link
-              to={`/courses/${id}/learn`}
-              className="btn-primary flex items-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+          {/* Action Buttons - Responsive Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowActionsDropdown(!showActionsDropdown);
+                }
+              }}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              title="Course Actions"
+              aria-label="Course actions menu"
+              aria-expanded={showActionsDropdown}
+              aria-haspopup="true"
             >
-              <EyeIcon className="h-5 w-5 mr-2" />
-              View Content
-            </Link>
-            {(isTrainer || isSuperAdmin) && (
-              <Link
-                to={`/courses/${id}/content`}
-                className="btn-secondary flex items-center"
-              >
-                <CogIcon className="h-5 w-5 mr-2" />
-                Manage Content
-              </Link>
-            )}
-            {isSuperAdmin && (
-              <button
-                onClick={() => setShowTrainerModal(true)}
-                className="btn-secondary flex items-center"
-                title="Assign Trainer (Super Admin only)"
-              >
-                <UserIcon className="h-4 w-4 mr-2" />
-                Assign Trainer
-              </button>
+              <EllipsisVerticalIcon className="h-6 w-6" />
+            </button>
+            
+            {/* Dropdown Menu */}
+            {showActionsDropdown && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 transition-all duration-200 ease-out sm:right-0 md:right-0 lg:right-0 xl:right-0">
+                <div className="py-1">
+                  {/* View Content - Always visible */}
+                  <Link
+                    to={`/courses/${id}/learn`}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                    onClick={() => setShowActionsDropdown(false)}
+                  >
+                    <EyeIcon className="h-5 w-5 mr-3 text-gray-400" />
+                    View Content
+                  </Link>
+                  
+                  {/* Manage Content - Trainer/Admin only */}
+                  {(isTrainer || isSuperAdmin) && (
+                    <Link
+                      to={`/courses/${id}/content`}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                      onClick={() => setShowActionsDropdown(false)}
+                    >
+                      <CogIcon className="h-5 w-5 mr-3 text-gray-400" />
+                      Manage Content
+                    </Link>
+                  )}
+                  
+                  {/* Manage Enrollment - Trainer/Admin only */}
+                  {(isTrainer || isSuperAdmin) && (
+                    <Link
+                      to={`/courses/${id}/enrollment`}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                      onClick={() => setShowActionsDropdown(false)}
+                    >
+                      <UserPlusIcon className="h-5 w-5 mr-3 text-gray-400" />
+                      Manage Enrollment
+                    </Link>
+                  )}
+                  
+                  {/* Assign Trainer - Super Admin only */}
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => {
+                        setShowActionsDropdown(false);
+                        setShowTrainerModal(true);
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                      title="Assign Trainer (Super Admin only)"
+                    >
+                      <UserIcon className="h-4 w-4 mr-3 text-gray-400" />
+                      Assign Trainer
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
