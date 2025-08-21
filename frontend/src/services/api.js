@@ -83,6 +83,8 @@ export const coursesAPI = {
   getAvailableTrainers: () => api.get('/courses/trainers/available').then(res => res.data),
   getCategories: () => api.get('/courses/categories/all'),
   getStats: () => api.get('/courses/stats/overview'),
+  // New trainer-specific endpoints
+  getTrainerCourses: (trainerId, params) => api.get(`/courses/trainer/${trainerId}`, { params }).then(res => res.data),
   uploadCourseImage: (courseName, file) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -127,7 +129,9 @@ export const enrollmentsAPI = {
   bulkEnroll: (data) => api.post('/enrollments/bulk', data),
   assignTrainee: (data) => api.post('/enrollments/assign', data),
   getCourseTrainees: (courseId, params) => api.get(`/enrollments/course/${courseId}/trainees`, { params }).then(res => res.data),
-  getAvailableTrainees: (params) => api.get('/enrollments/available-trainees', { params }).then(res => res.data)
+  getAvailableTrainees: (params) => api.get('/enrollments/available-trainees', { params }).then(res => res.data),
+  // New trainer-specific endpoints
+  getTrainerEnrollments: (trainerId, params) => api.get(`/enrollments/trainer/${trainerId}`, { params }).then(res => res.data),
 };
 
 // Attendance API
