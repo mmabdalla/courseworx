@@ -457,6 +457,64 @@ router.get('/trainers/available', auth, requireSuperAdmin, async (req, res) => {
   }
 });
 
+// @route   GET /api/courses/trainer/:trainerId
+// @desc    Get courses for a specific trainer
+// @access  Private (Trainer can only see their own courses, Super Admin can see any trainer's courses)
+router.get('/trainer/:trainerId', auth, async (req, res) => {
+  try {
+    const { trainerId } = req.params;
+    const { isPublished, page = 1, limit = 12, search, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+    
+    // Check if user can access this trainer's courses
+    if (req.user.role === 'trainer' && req.user.id !== trainerId) {
+      return res.status(403).json({ error: 'Access denied. You can only view your own courses.' });
+    }
+    
+    const offset = (page - 1) * limit;
+    const whereClause = { trainerId };
+    
+    // Apply filters
+    if (isPublished !== undefined) {
+      whereClause.isPublished = isPublished === 'true';
+    }
+    
+    if (search) {
+      whereClause[require('sequelize').Op.or] = [
+        { title: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { description: { [require('sequelize').Op.iLike]: `%${search}%` } },
+        { shortDescription: { [require('sequelize').Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    const { count, rows: courses } = await Course.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'trainer',
+          attributes: ['id', 'firstName', 'lastName', 'avatar']
+        }
+      ],
+      order: [[sortBy, sortOrder]],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      courses,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get trainer courses error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // @route   GET /api/courses/stats/overview
 // @desc    Get course statistics (Super Admin or Trainer)
 // @access  Private

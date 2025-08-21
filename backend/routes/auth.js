@@ -138,14 +138,11 @@ router.post('/login', [
       }
     });
     
-    console.log('Login attempt for identifier:', identifier, 'User found:', !!user, 'User active:', user?.isActive);
-    
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Invalid credentials or account inactive.' });
     }
 
     const isPasswordValid = await user.comparePassword(password);
-    console.log('Password validation result:', isPasswordValid);
     
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials.' });

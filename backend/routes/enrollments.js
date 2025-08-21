@@ -248,6 +248,85 @@ router.get('/available-trainees', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/enrollments/trainer/:trainerId
+// @desc    Get enrollments for courses taught by a specific trainer
+// @access  Private (Trainer can only see their own course enrollments, Super Admin can see any trainer's enrollments)
+router.get('/trainer/:trainerId', auth, async (req, res) => {
+  try {
+    const { trainerId } = req.params;
+    const { courseId, status, page = 1, limit = 20 } = req.query;
+    
+    // Check if user can access this trainer's enrollments
+    if (req.user.role === 'trainer' && req.user.id !== trainerId) {
+      return res.status(403).json({ error: 'Access denied. You can only view your own course enrollments.' });
+    }
+    
+    const offset = (page - 1) * limit;
+    
+    // Get trainer's courses
+    const trainerCourses = await Course.findAll({
+      where: { trainerId },
+      attributes: ['id']
+    });
+    
+    if (trainerCourses.length === 0) {
+      return res.json({
+        enrollments: [],
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: parseInt(limit)
+        }
+      });
+    }
+    
+    const courseIds = trainerCourses.map(c => c.id);
+    const whereClause = { courseId: { [require('sequelize').Op.in]: courseIds } };
+    
+    // Apply additional filters
+    if (courseId) {
+      whereClause.courseId = courseId;
+    }
+    
+    if (status) {
+      whereClause.status = status;
+    }
+
+    const { count, rows: enrollments } = await Enrollment.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email', 'avatar']
+        },
+        {
+          model: Course,
+          as: 'course',
+          attributes: ['id', 'title', 'description', 'thumbnail']
+        }
+      ],
+      order: [['enrolledAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      enrollments,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(count / limit),
+        totalItems: count,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Get trainer enrollments error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // @route   GET /api/enrollments/:id
 // @desc    Get enrollment by ID
 // @access  Private

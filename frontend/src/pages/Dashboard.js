@@ -14,6 +14,7 @@ import {
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 const SliderImageUpload = () => {
   const [file, setFile] = useState(null);
@@ -217,8 +218,8 @@ const Dashboard = () => {
 
   const renderTrainerDashboard = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Link to="/trainer/courses" className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <BookOpenIcon className="h-8 w-8 text-primary-600" />
@@ -228,25 +229,12 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-gray-900">
                 {trainerCourseStats?.data?.stats?.myCourses || 0}
               </p>
+              <p className="text-xs text-gray-400 mt-1">Click to view all courses</p>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CheckCircleIcon className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Published</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {trainerCourseStats?.data?.stats?.myPublishedCourses || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
+        <Link to="/trainer/students" className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <UsersIcon className="h-8 w-8 text-blue-600" />
@@ -256,9 +244,10 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-gray-900">
                 {enrollmentStats?.data?.stats?.myStudents || 0}
               </p>
+              <p className="text-xs text-gray-400 mt-1">Click to view all students</p>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -286,15 +275,15 @@ const Dashboard = () => {
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
-            <button className="w-full btn-primary">
+            <Link to="/courses/create" className="w-full btn-primary block text-center">
               Create New Course
-            </button>
-            <button className="w-full btn-secondary">
+            </Link>
+            <Link to="/trainer/courses" className="w-full btn-secondary block text-center">
               View All Courses
-            </button>
-            <button className="w-full btn-secondary">
-              Manage Assignments
-            </button>
+            </Link>
+            <Link to="/trainer/students" className="w-full btn-secondary block text-center">
+              Manage Students
+            </Link>
           </div>
         </div>
       </div>

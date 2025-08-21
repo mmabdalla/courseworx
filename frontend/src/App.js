@@ -18,6 +18,8 @@ import CourseContent from './pages/CourseContent';
 import CourseContentViewer from './pages/CourseContentViewer';
 import CourseEnrollment from './pages/CourseEnrollment';
 import Home from './pages/Home';
+import TrainerCourses from './pages/TrainerCourses';
+import TrainerStudents from './pages/TrainerStudents';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading, setupRequired } = useAuth();
@@ -100,6 +102,19 @@ const AppRoutes = () => {
             <CourseEnrollment />
           </PrivateRoute>
         } />
+        
+        {/* Trainer-specific routes */}
+        <Route path="/trainer/courses" element={
+          <PrivateRoute allowedRoles={['trainer']}>
+            <TrainerCourses />
+          </PrivateRoute>
+        } />
+        <Route path="/trainer/students" element={
+          <PrivateRoute allowedRoles={['trainer']}>
+            <TrainerStudents />
+          </PrivateRoute>
+        } />
+        
         <Route path="/courses/:id/learn" element={
           <PrivateRoute>
             <CourseContentViewer />
