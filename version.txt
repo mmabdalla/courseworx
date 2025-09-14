@@ -2,7 +2,7 @@
 👨‍💻 Developer: AI Assistant
 🎯 Focus: VIDEO UPLOAD BUG FIX - CONTENT CREATION FILE UPLOAD ISSUE
 
-CourseWorx v2.0.2 - Complete Plugin Architecture System and Multi-Currency Implementation
+CourseWorx v2.0.3 - Complete Plugin Architecture System and Multi-Currency Implementation
 ================================================================
 
 🎯 CRITICAL VIDEO UPLOAD BUG FIX - CONTENT CREATION FILE UPLOAD ISSUE
