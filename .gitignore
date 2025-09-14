@@ -95,6 +95,9 @@ Thumbs.db
 *.sqlite
 *.db
 
+# Course Video's 
+backend/uploads/
+
 # Temporary files
 tmp/
 temp/
