@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { coursesAPI, enrollmentsAPI } from '../services/api';
+import EditEnrollmentModal from '../components/EditEnrollmentModal';
 import {
   UserPlusIcon,
   UsersIcon,
@@ -11,10 +12,13 @@ import {
   CheckIcon,
   XMarkIcon,
   PlusIcon,
-  TrashIcon,
   EyeIcon,
   ClockIcon,
   CheckCircleIcon,
+  EllipsisVerticalIcon,
+  TrashIcon,
+  PencilIcon,
+  UserMinusIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -22,6 +26,7 @@ import toast from 'react-hot-toast';
 
 const CourseEnrollment = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user, isTrainer, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   
@@ -29,6 +34,12 @@ const CourseEnrollment = () => {
   const [selectedTrainees, setSelectedTrainees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [selectedEnrollments, setSelectedEnrollments] = useState([]);
+  const [showActionMenu, setShowActionMenu] = useState(null);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [traineeToRemove, setTraineeToRemove] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [traineeToEdit, setTraineeToEdit] = useState(null);
 
   // Get course details
   const { data: course, isLoading: courseLoading } = useQuery(
@@ -89,6 +100,92 @@ const CourseEnrollment = () => {
     }
   );
 
+  // Remove enrollment mutation
+  const removeEnrollmentMutation = useMutation(
+    (enrollmentId) => enrollmentsAPI.removeEnrollment(enrollmentId),
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(['enrollments', 'course', id, 'trainees']);
+        queryClient.invalidateQueries(['enrollments', 'available-trainees', id]);
+        toast.success(data.message || 'Trainee removed successfully');
+        setShowRemoveModal(false);
+        setTraineeToRemove(null);
+        setSelectedEnrollments([]);
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.error || 'Failed to remove trainee');
+      }
+    }
+  );
+
+  // Bulk remove enrollments mutation
+  const bulkRemoveMutation = useMutation(
+    (enrollmentIds) => enrollmentsAPI.bulkRemoveEnrollments(enrollmentIds),
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(['enrollments', 'course', id, 'trainees']);
+        queryClient.invalidateQueries(['enrollments', 'available-trainees', id]);
+        toast.success(data.message || 'Selected trainees removed successfully');
+        setSelectedEnrollments([]);
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.error || 'Failed to remove trainees');
+      }
+    }
+  );
+
+  // Handle trainee selection for bulk actions
+  const handleEnrollmentSelect = (enrollmentId, isSelected) => {
+    if (isSelected) {
+      setSelectedEnrollments([...selectedEnrollments, enrollmentId]);
+    } else {
+      setSelectedEnrollments(selectedEnrollments.filter(id => id !== enrollmentId));
+    }
+  };
+
+  // Handle select all enrollments
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      const allEnrollmentIds = enrolledData?.trainees?.map(trainee => trainee.enrollmentId) || [];
+      setSelectedEnrollments(allEnrollmentIds);
+    } else {
+      setSelectedEnrollments([]);
+    }
+  };
+
+  // Handle remove single trainee
+  const handleRemoveTrainee = (trainee) => {
+    setTraineeToRemove(trainee);
+    setShowRemoveModal(true);
+  };
+
+  // Confirm remove trainee
+  const confirmRemoveTrainee = () => {
+    if (traineeToRemove?.enrollmentId) {
+      removeEnrollmentMutation.mutate(traineeToRemove.enrollmentId);
+    }
+  };
+
+  // Handle bulk remove
+  const handleBulkRemove = () => {
+    if (selectedEnrollments.length === 0) {
+      toast.error('Please select at least one trainee to remove');
+      return;
+    }
+    bulkRemoveMutation.mutate(selectedEnrollments);
+  };
+
+  // Handle view trainee details
+  const handleViewDetails = (trainee) => {
+    navigate(`/courses/${id}/trainee/${trainee.id}`);
+  };
+
+  // Handle edit enrollment
+  const handleEditEnrollment = (trainee) => {
+    setTraineeToEdit(trainee);
+    setShowEditModal(true);
+  };
+
   const handleBulkAssign = async () => {
     if (selectedTrainees.length === 0) {
       toast.error('Please select at least one trainee');
@@ -144,11 +241,33 @@ const CourseEnrollment = () => {
   }
 
   // Check if user has permission to manage this course
-  const canManage = isSuperAdmin || (isTrainer && course.trainerId === user.id);
+  const courseTrainerId = course.trainer?.id || course.trainerId;
+  const canManage = isSuperAdmin || (isTrainer && courseTrainerId === user.id);
+  
+  // Enhanced debug logging
+  console.log('CourseEnrollment Debug:', {
+    course,
+    courseTrainerId,
+    'course.trainer': course.trainer,
+    'course.trainer?.id': course.trainer?.id,
+    'course.trainerId': course.trainerId,
+    user,
+    userId: user.id,
+    isTrainer,
+    isSuperAdmin,
+    canManage,
+    'trainerId comparison': courseTrainerId === user.id,
+    'user.id type': typeof user.id,
+    'courseTrainerId type': typeof courseTrainerId
+  });
+  
   if (!canManage) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-500">You don't have permission to manage this course.</p>
+        <p className="text-sm text-gray-400 mt-2">
+          Course Trainer ID: {courseTrainerId || 'undefined'} | Your ID: {user.id}
+        </p>
       </div>
     );
   }
@@ -203,26 +322,72 @@ const CourseEnrollment = () => {
       {/* Enrolled Trainees */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Enrolled Trainees</h3>
-          <span className="text-sm text-gray-500">
-            {enrolledData?.trainees?.length || 0} trainees
-          </span>
+          <div className="flex items-center space-x-4">
+            <h3 className="text-lg font-medium text-gray-900">Enrolled Trainees</h3>
+            <span className="text-sm text-gray-500">
+              {enrolledData?.trainees?.length || 0} trainees
+            </span>
+            {selectedEnrollments.length > 0 && (
+              <span className="text-sm text-primary-600 font-medium">
+                {selectedEnrollments.length} selected
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            {selectedEnrollments.length > 0 && (
+              <button
+                onClick={handleBulkRemove}
+                className="btn-danger flex items-center text-sm"
+                disabled={bulkRemoveMutation.isLoading}
+              >
+                <UserMinusIcon className="h-4 w-4 mr-1" />
+                Remove Selected
+              </button>
+            )}
+            <button
+              onClick={() => setShowAssignModal(true)}
+              className="btn-primary flex items-center text-sm"
+            >
+              <UserPlusIcon className="h-4 w-4 mr-1" />
+              Assign Trainees
+            </button>
+          </div>
         </div>
 
         {enrolledData?.trainees?.length > 0 ? (
           <div className="space-y-3">
+            {/* Select All Header */}
+            <div className="flex items-center space-x-3 p-2 border-b border-gray-200">
+              <input
+                type="checkbox"
+                checked={selectedEnrollments.length === enrolledData.trainees.length && enrolledData.trainees.length > 0}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <span className="text-sm text-gray-500">Select all trainees</span>
+            </div>
+
             {enrolledData.trainees.map((trainee) => (
-              <div key={trainee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={trainee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedEnrollments.includes(trainee.enrollmentId)}
+                    onChange={(e) => handleEnrollmentSelect(trainee.enrollmentId, e.target.checked)}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
                   <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
                     <span className="text-sm font-medium text-primary-600">
                       {trainee.firstName?.charAt(0)}{trainee.lastName?.charAt(0)}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <button
+                      onClick={() => handleViewDetails(trainee)}
+                      className="font-medium text-gray-900 hover:text-blue-600 hover:underline cursor-pointer text-left transition-colors"
+                    >
                       {trainee.firstName} {trainee.lastName}
-                    </p>
+                    </button>
                     <p className="text-sm text-gray-500">{trainee.email}</p>
                   </div>
                 </div>
@@ -245,6 +410,40 @@ const CourseEnrollment = () => {
                       {trainee.status}
                     </span>
                   </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowActionMenu(showActionMenu === trainee.id ? null : trainee.id)}
+                      className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200"
+                    >
+                      <EllipsisVerticalIcon className="h-5 w-5" />
+                    </button>
+                    {showActionMenu === trainee.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              setShowActionMenu(null);
+                              handleEditEnrollment(trainee);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                          >
+                            <PencilIcon className="h-4 w-4 mr-2" />
+                            Edit Enrollment
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowActionMenu(null);
+                              handleRemoveTrainee(trainee);
+                            }}
+                            className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                          >
+                            <TrashIcon className="h-4 w-4 mr-2" />
+                            Remove from Course
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -257,6 +456,45 @@ const CourseEnrollment = () => {
           </div>
         )}
       </div>
+
+      {/* Remove Trainee Confirmation Modal */}
+      {showRemoveModal && traineeToRemove && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex items-center mb-4">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-3" />
+              <h3 className="text-lg font-medium text-gray-900">Remove Trainee</h3>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to remove <strong>{traineeToRemove.firstName} {traineeToRemove.lastName}</strong> from this course?
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                This action cannot be undone. The trainee will lose access to all course content.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowRemoveModal(false);
+                  setTraineeToRemove(null);
+                }}
+                className="btn-secondary"
+                disabled={removeEnrollmentMutation.isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveTrainee}
+                className="btn-danger"
+                disabled={removeEnrollmentMutation.isLoading}
+              >
+                {removeEnrollmentMutation.isLoading ? 'Removing...' : 'Remove Trainee'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Assign Trainees Modal */}
       {showAssignModal && (
@@ -349,6 +587,19 @@ const CourseEnrollment = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Enrollment Modal */}
+      {showEditModal && traineeToEdit && (
+        <EditEnrollmentModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setTraineeToEdit(null);
+          }}
+          trainee={traineeToEdit}
+          course={course}
+        />
       )}
     </div>
   );

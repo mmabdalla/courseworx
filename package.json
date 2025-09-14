@@ -1,6 +1,6 @@
 {
   "name": "courseworx",
-  "version": "0.0.1",
+  "version": "1.7.0",
   "description": "A comprehensive course management application for trainers and trainees",
   "main": "index.js",
   "repository": {

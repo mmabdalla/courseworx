@@ -6,19 +6,27 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
+    "@tanstack/react-query": "^5.87.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.5.2",
+    "@videojs/themes": "^1.0.1",
     "axios": "^1.6.2",
     "i18next": "^25.3.2",
+    "quill": "^2.0.3",
     "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
     "react-i18next": "^15.6.1",
+    "react-qr-reader": "^3.0.0-beta-1",
     "react-query": "^3.39.3",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^6.20.1",
     "react-scripts": "^5.0.1",
+    "react-video-js-player": "^1.1.1",
+    "video.js": "^8.23.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -50,5 +58,6 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6"
-  }
+  },
+  "proxy": "http://localhost:5000"
 }

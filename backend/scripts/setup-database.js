@@ -1,26 +1,46 @@
 const { sequelize } = require('../config/database');
-// Import all models to ensure they are registered with Sequelize
-require('../models');
-require('dotenv').config();
+const { LessonCompletion, CourseSection, Course } = require('../models');
 
 const setupDatabase = async () => {
   try {
-    console.log('🔄 Setting up clean database...');
+    console.log('🔄 Setting up database...');
     
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('✅ Database connection established.');
+    // Sync all models
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database synchronized successfully');
     
-    // Sync database with force to recreate all tables (clean slate)
-    await sequelize.sync({ force: true });
-    console.log('✅ Database synchronized successfully - all tables recreated.');
+    // Create lesson_completions table if it doesn't exist
+    try {
+      await LessonCompletion.sync({ alter: true });
+      console.log('✅ Lesson completions table created/updated');
+    } catch (error) {
+      console.log('⚠️ Lesson completions table already exists or error:', error.message);
+    }
+
+    // Create course_sections table if it doesn't exist
+    try {
+      await CourseSection.sync({ alter: true });
+      console.log('✅ Course sections table created/updated');
+    } catch (error) {
+      console.log('⚠️ Course sections table already exists or error:', error.message);
+    }
+
+    // Create/update courses table with Course Type fields
+    try {
+      await Course.sync({ alter: true });
+      console.log('✅ Courses table created/updated with Course Type fields');
+      console.log('   - courseType (online/classroom/hybrid)');
+      console.log('   - location (for classroom/hybrid courses)');
+      console.log('   - allowRecording, recordForReplay, recordForFutureStudents');
+    } catch (error) {
+      console.log('⚠️ Courses table already exists or error:', error.message);
+    }
     
-    console.log('\n🎉 Clean database setup completed successfully!');
-    console.log('\n📋 Database is now ready for your data:');
-    console.log('- All tables have been recreated');
-    console.log('- No demo users exist');
-    console.log('- Ready for fresh data input');
-    
+    console.log('🎉 Database setup completed successfully!');
+    console.log('🚀 Course Type system is now available:');
+    console.log('   • Online Courses: Pre-recorded, self-paced learning');
+    console.log('   • Classroom Courses: Physical location + live trainer');
+    console.log('   • Hybrid Courses: Live classroom + online streaming');
     process.exit(0);
   } catch (error) {
     console.error('❌ Database setup failed:', error);

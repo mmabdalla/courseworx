@@ -3,9 +3,9 @@ import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { coursesAPI } from '../services/api';
+import { getThumbnailUrl } from '../utils/imageUtils';
 import {
   BookOpenIcon,
-  EyeIcon,
   PencilIcon,
   PlusIcon,
   CheckCircleIcon,
@@ -39,6 +39,8 @@ const TrainerCourses = () => {
       toast.error('Failed to update course status');
     }
   };
+
+
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <div className="text-red-500">Error loading courses: {error.message}</div>;
@@ -165,62 +167,69 @@ const TrainerCourses = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course) => (
-            <div key={course.id} className="card hover:shadow-lg transition-shadow duration-200">
-              {/* Course Image */}
-              <div className="aspect-w-16 aspect-h-9 mb-4">
-                {course.thumbnail ? (
-                  <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <BookOpenIcon className="h-12 w-12 text-gray-400" />
-                  </div>
-                )}
-              </div>
-
-              {/* Course Info */}
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                    {course.title}
-                  </h3>
-                  <span className={`badge ml-2 ${
-                    course.isPublished ? 'badge-success' : 'badge-warning'
-                  }`}>
-                    {course.isPublished ? 'Published' : 'Draft'}
-                  </span>
+          {courses.map((course) => {
+            // RTL language detection for each course
+            const isRTL = course.language === 'arabic' || course.language === 'hebrew' || course.language === 'urdu';
+            
+            return (
+              <div
+                key={course.id}
+                className={`card hover:shadow-lg transition-shadow duration-200 ${isRTL ? 'text-right' : 'text-left'}`}
+                dir={isRTL ? 'rtl' : 'ltr'}
+              >
+              {/* Course Image - Clickable for viewing */}
+              <Link
+                to={`/courses/${course.id}`}
+                className="block cursor-pointer"
+              >
+                <div className="aspect-w-16 aspect-h-9 mb-4">
+                  {course.thumbnail ? (
+                    <img
+                      src={getThumbnailUrl(course.thumbnail)}
+                      alt={course.title}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <BookOpenIcon className="h-12 w-12 text-gray-400" />
+                    </div>
+                  )}
                 </div>
 
-                <p className="text-gray-600 text-sm line-clamp-2">
-                  {course.shortDescription || course.description}
-                </p>
-
-                {/* Course Stats */}
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <UserGroupIcon className="h-4 w-4 mr-1" />
-                    <span>{course.enrolledStudents || 0} students</span>
+                {/* Course Info - Clickable for viewing */}
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                      {course.title}
+                    </h3>
+                    <span className={`badge ml-2 ${
+                      course.isPublished ? 'badge-success' : 'badge-warning'
+                    }`}>
+                      {course.isPublished ? 'Published' : 'Draft'}
+                    </span>
                   </div>
-                  <div className="flex items-center">
-                    <ChartBarIcon className="h-4 w-4 mr-1" />
-                    <span>{course.level || 'Beginner'}</span>
+
+                  <p className="text-gray-600 text-sm line-clamp-2">
+                    {course.shortDescription || course.description}
+                  </p>
+
+                  {/* Course Stats */}
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <UserGroupIcon className="h-4 w-4 mr-1" />
+                      <span>{course.enrolledStudents || 0} students</span>
+                    </div>
+                    <div className="flex items-center">
+                      <ChartBarIcon className="h-4 w-4 mr-1" />
+                      <span>{course.level || 'Beginner'}</span>
+                    </div>
                   </div>
                 </div>
+              </Link>
 
-                {/* Action Buttons */}
-                <div className="flex space-x-2 pt-2">
-                  <Link
-                    to={`/courses/${course.id}`}
-                    className="flex-1 btn-secondary flex items-center justify-center space-x-2"
-                  >
-                    <EyeIcon className="h-4 w-4" />
-                    <span>View</span>
-                  </Link>
-                  
+              {/* Action Buttons - Separate from view link */}
+              <div className="pt-4 space-y-2">
+                <div className="flex space-x-2">
                   <Link
                     to={`/courses/${course.id}/edit`}
                     className="flex-1 btn-primary flex items-center justify-center space-x-2"
@@ -241,9 +250,12 @@ const TrainerCourses = () => {
                 >
                   {course.isPublished ? 'Unpublish' : 'Publish'}
                 </button>
+
+
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

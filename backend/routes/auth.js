@@ -7,6 +7,22 @@ const { auth, requireSuperAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Handle OPTIONS preflight for auth routes
+router.options('*', (req, res) => {
+  // Use the same CORS origin as the main server
+  const allowedOrigins = ['http://localhost:3000', 'http://10.0.0.96:3000', 'http://127.0.0.1:3000'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Generate JWT token
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -120,8 +136,16 @@ router.post('/login', [
   body('password').isLength({ min: 6 })
 ], async (req, res) => {
   try {
+    console.log('Login attempt:', { 
+      identifier: req.body.identifier, 
+      passwordLength: req.body.password?.length,
+      userAgent: req.get('User-Agent'),
+      ip: req.ip
+    });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -138,13 +162,23 @@ router.post('/login', [
       }
     });
     
+    console.log('User lookup result:', { 
+      found: !!user, 
+      userId: user?.id, 
+      role: user?.role, 
+      isActive: user?.isActive 
+    });
+    
     if (!user || !user.isActive) {
+      console.log('Login failed: User not found or inactive');
       return res.status(401).json({ error: 'Invalid credentials or account inactive.' });
     }
 
     const isPasswordValid = await user.comparePassword(password);
+    console.log('Password validation result:', isPasswordValid);
     
     if (!isPasswordValid) {
+      console.log('Login failed: Invalid password');
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
@@ -152,6 +186,7 @@ router.post('/login', [
     await user.update({ lastLogin: new Date() });
 
     const token = generateToken(user.id);
+    console.log('Login successful:', { userId: user.id, role: user.role });
     
     res.json({
       token,

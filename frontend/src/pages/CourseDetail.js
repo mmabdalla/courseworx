@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { coursesAPI, enrollmentsAPI } from '../services/api';
+import api from '../utils/api';
+import { getThumbnailUrl } from '../utils/imageUtils';
 import {
   AcademicCapIcon,
   ClockIcon,
@@ -13,6 +15,10 @@ import {
   EyeIcon,
   UserPlusIcon,
   EllipsisVerticalIcon,
+  PencilIcon,
+  TrashIcon,
+  ShoppingCartIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
 import TrainerAssignmentModal from '../components/TrainerAssignmentModal';
@@ -22,6 +28,7 @@ const CourseDetail = () => {
   const { id } = useParams();
   const { user, isTrainee, isTrainer, isSuperAdmin } = useAuth();
   const [enrolling, setEnrolling] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [showTrainerModal, setShowTrainerModal] = useState(false);
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
   const queryClient = useQueryClient();
@@ -51,6 +58,26 @@ const CourseDetail = () => {
     }
   );
 
+  // Check if user is already enrolled in this course
+  const { data: enrollmentStatus, isLoading: enrollmentLoading } = useQuery(
+    ['enrollments', 'my'],
+    () => enrollmentsAPI.getMy(),
+    { 
+      enabled: !!user && isTrainee,
+      retry: 1,
+      retryDelay: 1000
+    }
+  );
+
+  // Check if current user is enrolled in this specific course
+  const userEnrollment = enrollmentStatus?.enrollments?.find(
+    enrollment => enrollment.courseId === id
+  );
+  
+  const isEnrolled = userEnrollment && ['active', 'pending', 'completed'].includes(userEnrollment.status);
+  const isActiveEnrollment = userEnrollment && userEnrollment.status === 'active';
+  const isPendingEnrollment = userEnrollment && userEnrollment.status === 'pending';
+
   const enrollmentMutation = useMutation(
     (data) => enrollmentsAPI.create(data),
     {
@@ -66,6 +93,21 @@ const CourseDetail = () => {
     }
   );
 
+  const addToCartMutation = useMutation(
+    (data) => api.post('/financial/cart/items', data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['cart']);
+        toast.success('Course added to cart!');
+        setAddingToCart(false);
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to add course to cart');
+        setAddingToCart(false);
+      },
+    }
+  );
+
   const handleEnroll = async () => {
     if (!user) {
       toast.error('Please login to enroll in courses');
@@ -75,8 +117,32 @@ const CourseDetail = () => {
     setEnrolling(true);
     enrollmentMutation.mutate({
       courseId: id,
-      paymentAmount: courseData.price,
+      paymentAmount: parseFloat(courseData.price),
     });
+  };
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      toast.error('Please login to add courses to cart');
+      return;
+    }
+
+    setAddingToCart(true);
+    addToCartMutation.mutate({
+      courseId: id,
+      quantity: 1
+    });
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    try {
+      await coursesAPI.delete(courseId);
+      toast.success('Course deleted successfully!');
+      // Redirect to courses list
+      window.location.href = '/courses';
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to delete course');
+    }
   };
 
   const formatPrice = (price) => {
@@ -126,9 +192,12 @@ const CourseDetail = () => {
   }
 
   const courseData = course.course;
+  
+  // RTL language detection
+  const isRTL = courseData.language === 'arabic' || courseData.language === 'hebrew' || courseData.language === 'urdu';
 
   return (
-    <div>
+    <div className={`${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
@@ -156,7 +225,7 @@ const CourseDetail = () => {
             
             {/* Dropdown Menu */}
             {showActionsDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 transition-all duration-200 ease-out sm:right-0 md:right-0 lg:right-0 xl:right-0">
+              <div className={`absolute mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 transition-all duration-200 ease-out ${isRTL ? 'left-0' : 'right-0'}`}>
                 <div className="py-1">
                   {/* View Content - Always visible */}
                   <Link
@@ -192,6 +261,30 @@ const CourseDetail = () => {
                     </Link>
                   )}
                   
+                  {/* Classroom Sessions - Trainer/Admin only, for classroom/hybrid courses */}
+                  {(isTrainer || isSuperAdmin) && (courseData?.courseType === 'classroom' || courseData?.courseType === 'hybrid') && (
+                    <Link
+                      to={`/courses/${id}/sessions`}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                      onClick={() => setShowActionsDropdown(false)}
+                    >
+                      <CalendarDaysIcon className="h-5 w-5 mr-3 text-gray-400" />
+                      Classroom Sessions
+                    </Link>
+                  )}
+                  
+                  {/* Edit Course - Trainer/Admin only */}
+                  {(isTrainer || isSuperAdmin) && (
+                    <Link
+                      to={`/courses/${id}/edit`}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                      onClick={() => setShowActionsDropdown(false)}
+                    >
+                      <PencilIcon className="h-5 w-5 mr-3 text-gray-400" />
+                      Edit Course
+                    </Link>
+                  )}
+                  
                   {/* Assign Trainer - Super Admin only */}
                   {isSuperAdmin && (
                     <button
@@ -204,6 +297,23 @@ const CourseDetail = () => {
                     >
                       <UserIcon className="h-4 w-4 mr-3 text-gray-400" />
                       Assign Trainer
+                    </button>
+                  )}
+                  
+                  {/* Delete Course - Trainer/Admin only */}
+                  {(isTrainer || isSuperAdmin) && (
+                    <button
+                      onClick={() => {
+                        setShowActionsDropdown(false);
+                        if (window.confirm(`Are you sure you want to delete "${courseData.title}"? This action cannot be undone.`)) {
+                          handleDeleteCourse(courseData.id);
+                        }
+                      }}
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-200"
+                      title="Delete Course (Cannot be undone)"
+                    >
+                      <TrashIcon className="h-5 w-5 mr-3 text-red-400" />
+                      Delete Course
                     </button>
                   )}
                 </div>
@@ -220,7 +330,7 @@ const CourseDetail = () => {
           {courseData.thumbnail && (
             <div className="aspect-w-16 aspect-h-9">
               <img
-                src={courseData.thumbnail}
+                src={getThumbnailUrl(courseData.thumbnail)}
                 alt={courseData.title}
                 className="w-full h-64 object-cover rounded-lg"
               />
@@ -295,13 +405,81 @@ const CourseDetail = () => {
                 {formatPrice(courseData.price)}
               </div>
               {isTrainee && (
-                <button
-                  onClick={handleEnroll}
-                  disabled={enrolling}
-                  className="w-full btn-primary"
-                >
-                  {enrolling ? <LoadingSpinner size="sm" /> : 'Enroll Now'}
-                </button>
+                <>
+                  {enrollmentLoading ? (
+                    <div className="w-full flex justify-center py-2">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  ) : isEnrolled ? (
+                    <div className="w-full text-center">
+                      {isPendingEnrollment ? (
+                        <>
+                          <div className="flex items-center justify-center w-full bg-yellow-100 text-yellow-800 py-2 px-4 rounded-lg mb-2">
+                            <AcademicCapIcon className="h-5 w-5 mr-2" />
+                            <span className="font-medium">Enrollment Pending</span>
+                          </div>
+                          <div className="text-sm text-gray-600 mb-3">
+                            Payment required to access course content
+                          </div>
+                          <button
+                            onClick={handleEnroll}
+                            disabled={enrolling}
+                            className="w-full btn-secondary"
+                          >
+                            {enrolling ? <LoadingSpinner size="sm" /> : 'Complete Payment'}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-center w-full bg-green-100 text-green-800 py-2 px-4 rounded-lg mb-2">
+                            <AcademicCapIcon className="h-5 w-5 mr-2" />
+                            <span className="font-medium">Already Enrolled</span>
+                          </div>
+                          <Link
+                            to={`/courses/${id}/learn`}
+                            className="w-full btn-primary inline-block text-center"
+                          >
+                            Continue Learning
+                          </Link>
+                          {/* Attendance Tracker for classroom courses */}
+                          {(courseData?.courseType === 'classroom' || courseData?.courseType === 'hybrid') && (
+                            <Link
+                              to="/attendance/tracker"
+                              className="w-full btn-secondary inline-block text-center mt-2"
+                            >
+                              <CalendarDaysIcon className="h-4 w-4 mr-2 inline" />
+                              Attendance Tracker
+                            </Link>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        onClick={handleEnroll}
+                        disabled={enrolling}
+                        className="w-full btn-primary"
+                      >
+                        {enrolling ? <LoadingSpinner size="sm" /> : 'Enroll Now'}
+                      </button>
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={addingToCart}
+                        className="w-full btn-secondary flex items-center justify-center"
+                      >
+                        {addingToCart ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <>
+                            <ShoppingCartIcon className="h-4 w-4 mr-2" />
+                            Add to Cart
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

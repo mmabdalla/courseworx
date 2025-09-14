@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+Always read the file version.txt at the begining of each new chat to get a summary of all previous changes.

@@ -1,19 +1,16 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
-const { Attendance, User, Course } = require('../models');
-const { auth, requireTrainee } = require('../middleware/auth');
-
+const { body, param, validationResult } = require('express-validator');
+const { auth, requireTrainer, requireSuperAdmin } = require('../middleware/auth');
+const AttendanceRecord = require('../models/AttendanceRecord');
+const ClassroomSession = require('../models/ClassroomSession');
+const Course = require('../models/Course');
+const User = require('../models/User');
 const router = express.Router();
 
-// @route   POST /api/attendance/sign-in
-// @desc    Sign in for a course session
-// @access  Private (Trainee)
-router.post('/sign-in', [
+// Check in using QR code
+router.post('/checkin', [
   auth,
-  requireTrainee,
-  body('courseId').isUUID(),
-  body('location').optional().isString(),
-  body('deviceInfo').optional().isString()
+  body('qrCodeData').isString().withMessage('QR code data is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -21,84 +18,112 @@ router.post('/sign-in', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { courseId, location, deviceInfo } = req.body;
-    const today = new Date().toISOString().split('T')[0];
+    const { qrCodeData } = req.body;
+    const traineeId = req.user.id;
 
-    // Check if course exists
-    const course = await Course.findByPk(courseId);
-    if (!course) {
-      return res.status(404).json({ error: 'Course not found.' });
+    // Parse QR code data
+    let qrData;
+    try {
+      qrData = JSON.parse(qrCodeData);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid QR code format' });
     }
 
-    // Check if already signed in today
-    const existingAttendance = await Attendance.findOne({
+    // Find session by QR code
+    const session = await ClassroomSession.findOne({
+      where: { qrCode: qrCodeData },
+      include: [
+        {
+          model: Course,
+          as: 'Course',
+          attributes: ['id', 'title', 'courseType', 'trainerId']
+        }
+      ]
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found or QR code expired' });
+    }
+
+    // Check if QR code is still valid
+    if (new Date() > session.qrCodeExpiry) {
+      return res.status(400).json({ error: 'QR code has expired' });
+    }
+
+    // Check if trainee is enrolled in the course
+    const enrollment = await Course.findOne({
       where: {
-        userId: req.user.id,
-        courseId,
-        date: today
+        id: session.courseId,
+        '$Enrollments.traineeId$': traineeId
+      },
+      include: [
+        {
+          model: require('../models/Enrollment'),
+          where: { traineeId },
+          required: true
+        }
+      ]
+    });
+
+    if (!enrollment) {
+      return res.status(403).json({ error: 'You are not enrolled in this course' });
+    }
+
+    // Check if already checked in
+    const existingRecord = await AttendanceRecord.findOne({
+      where: {
+        sessionId: session.id,
+        traineeId
       }
     });
 
-    if (existingAttendance && existingAttendance.signInTime) {
-      return res.status(400).json({ error: 'Already signed in for today.' });
+    if (existingRecord && existingRecord.checkInTime) {
+      return res.status(400).json({ error: 'You have already checked in for this session' });
     }
 
-    let attendance;
-    if (existingAttendance) {
-      // Update existing record
-      attendance = await existingAttendance.update({
-        signInTime: new Date(),
-        status: 'present',
-        location,
-        deviceInfo,
-        ipAddress: req.ip
-      });
+    // Determine if late
+    const sessionStartTime = new Date(`${session.sessionDate}T${session.startTime}`);
+    const isLate = new Date() > sessionStartTime;
+
+    // Create or update attendance record
+    const attendanceData = {
+      sessionId: session.id,
+      traineeId,
+      checkInTime: new Date(),
+      checkInMethod: 'qr_code',
+      status: isLate ? 'late' : 'present',
+      isPresent: true
+    };
+
+    if (existingRecord) {
+      await existingRecord.update(attendanceData);
     } else {
-      // Create new record
-      attendance = await Attendance.create({
-        userId: req.user.id,
-        courseId,
-        date: today,
-        signInTime: new Date(),
-        status: 'present',
-        location,
-        deviceInfo,
-        ipAddress: req.ip
-      });
+      await AttendanceRecord.create(attendanceData);
     }
 
-    const attendanceWithDetails = await Attendance.findByPk(attendance.id, {
-      include: [
-        {
-          model: Course,
-          as: 'course',
-          attributes: ['id', 'title']
-        },
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'firstName', 'lastName']
-        }
-      ]
-    });
-
-    res.status(201).json({
-      message: 'Successfully signed in.',
-      attendance: attendanceWithDetails
+    res.json({
+      message: isLate ? 'Checked in successfully (marked as late)' : 'Checked in successfully',
+      attendance: {
+        sessionId: session.id,
+        courseTitle: session.Course.title,
+        sessionDate: session.sessionDate,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        location: session.location,
+        checkInTime: attendanceData.checkInTime,
+        status: attendanceData.status
+      }
     });
   } catch (error) {
-    console.error('Sign in error:', error);
-    res.status(500).json({ error: 'Server error.' });
+    console.error('Error during check-in:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// @route   POST /api/attendance/sign-out
-// @desc    Sign out from a course session
-// @access  Private (Trainee)
-router.post('/sign-out', [
+// Check out using QR code
+router.post('/checkout', [
   auth,
-  requireTrainee,
-  body('courseId').isUUID()
+  body('qrCodeData').isString().withMessage('QR code data is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -106,159 +131,97 @@ router.post('/sign-out', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { courseId } = req.body;
-    const today = new Date().toISOString().split('T')[0];
+    const { qrCodeData } = req.body;
+    const traineeId = req.user.id;
 
-    // Find today's attendance record
-    const attendance = await Attendance.findOne({
-      where: {
-        userId: req.user.id,
-        courseId,
-        date: today
-      }
-    });
-
-    if (!attendance) {
-      return res.status(404).json({ error: 'No sign-in record found for today.' });
+    // Parse QR code data
+    let qrData;
+    try {
+      qrData = JSON.parse(qrCodeData);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid QR code format' });
     }
 
-    if (attendance.signOutTime) {
-      return res.status(400).json({ error: 'Already signed out for today.' });
-    }
-
-    const signOutTime = new Date();
-    const duration = Math.round((signOutTime - attendance.signInTime) / (1000 * 60)); // in minutes
-
-    await attendance.update({
-      signOutTime,
-      duration,
-      status: duration < 30 ? 'early_departure' : 'present' // Less than 30 minutes is early departure
-    });
-
-    const updatedAttendance = await Attendance.findByPk(attendance.id, {
+    // Find session by QR code
+    const session = await ClassroomSession.findOne({
+      where: { qrCode: qrCodeData },
       include: [
         {
           model: Course,
-          as: 'course',
-          attributes: ['id', 'title']
-        },
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'firstName', 'lastName']
+          as: 'Course',
+          attributes: ['id', 'title', 'courseType', 'trainerId']
         }
       ]
     });
 
-    res.json({
-      message: 'Successfully signed out.',
-      attendance: updatedAttendance
-    });
-  } catch (error) {
-    console.error('Sign out error:', error);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found or QR code expired' });
+    }
 
-// @route   GET /api/attendance/my
-// @desc    Get user's attendance records
-// @access  Private
-router.get('/my', auth, async (req, res) => {
-  try {
-    const { courseId, startDate, endDate, page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
-    
-    const whereClause = { userId: req.user.id };
-    if (courseId) whereClause.courseId = courseId;
-    if (startDate) whereClause.date = { [require('sequelize').Op.gte]: startDate };
-    if (endDate) whereClause.date = { [require('sequelize').Op.lte]: endDate };
+    // Check if QR code is still valid
+    if (new Date() > session.qrCodeExpiry) {
+      return res.status(400).json({ error: 'QR code has expired' });
+    }
 
-    const { count, rows: attendance } = await Attendance.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: Course,
-          as: 'course',
-          attributes: ['id', 'title', 'thumbnail']
-        }
-      ],
-      order: [['date', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+    // Find attendance record
+    const attendanceRecord = await AttendanceRecord.findOne({
+      where: {
+        sessionId: session.id,
+        traineeId
+      }
     });
 
+    if (!attendanceRecord) {
+      return res.status(404).json({ error: 'No check-in record found for this session' });
+    }
+
+    if (attendanceRecord.checkOutTime) {
+      return res.status(400).json({ error: 'You have already checked out for this session' });
+    }
+
+    // Calculate duration
+    const checkOutTime = new Date();
+    const duration = Math.round((checkOutTime - attendanceRecord.checkInTime) / (1000 * 60)); // in minutes
+
+    // Determine if left early
+    const sessionEndTime = new Date(`${session.sessionDate}T${session.endTime}`);
+    const leftEarly = checkOutTime < sessionEndTime;
+
+    // Update attendance record
+    await attendanceRecord.update({
+      checkOutTime,
+      checkOutMethod: 'qr_code',
+      status: leftEarly ? 'left_early' : attendanceRecord.status,
+      duration
+    });
+
     res.json({
-      attendance,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
+      message: leftEarly ? 'Checked out successfully (marked as left early)' : 'Checked out successfully',
+      attendance: {
+        sessionId: session.id,
+        courseTitle: session.Course.title,
+        sessionDate: session.sessionDate,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        checkInTime: attendanceRecord.checkInTime,
+        checkOutTime,
+        duration,
+        status: leftEarly ? 'left_early' : attendanceRecord.status
       }
     });
   } catch (error) {
-    console.error('Get attendance error:', error);
-    res.status(500).json({ error: 'Server error.' });
+    console.error('Error during check-out:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// @route   GET /api/attendance/course/:courseId
-// @desc    Get attendance for a specific course (Trainer or Super Admin)
-// @access  Private
-router.get('/course/:courseId', auth, async (req, res) => {
-  try {
-    const { courseId } = req.params;
-    const { date, page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
-    
-    // Check if user can access this course attendance
-    const course = await Course.findByPk(courseId);
-    if (!course) {
-      return res.status(404).json({ error: 'Course not found.' });
-    }
-
-    if (req.user.role !== 'super_admin' && course.trainerId !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to view this course attendance.' });
-    }
-
-    const whereClause = { courseId };
-    if (date) whereClause.date = date;
-
-    const { count, rows: attendance } = await Attendance.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'firstName', 'lastName', 'avatar']
-        }
-      ],
-      order: [['date', 'DESC'], ['signInTime', 'ASC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
-    });
-
-    res.json({
-      attendance,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(count / limit),
-        totalItems: count,
-        itemsPerPage: parseInt(limit)
-      }
-    });
-  } catch (error) {
-    console.error('Get course attendance error:', error);
-    res.status(500).json({ error: 'Server error.' });
-  }
-});
-
-// @route   PUT /api/attendance/:id
-// @desc    Update attendance record (Trainer or Super Admin)
-// @access  Private
-router.put('/:id', [
+// Manual attendance management (for trainers)
+router.post('/manual', [
   auth,
-  body('status').optional().isIn(['present', 'absent', 'late', 'early_departure']),
+  requireTrainer,
+  body('sessionId').isUUID().withMessage('Invalid session ID'),
+  body('traineeId').isUUID().withMessage('Invalid trainee ID'),
+  body('action').isIn(['checkin', 'checkout']).withMessage('Action must be checkin or checkout'),
   body('notes').optional().isString()
 ], async (req, res) => {
   try {
@@ -267,82 +230,168 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const attendance = await Attendance.findByPk(req.params.id, {
+    const { sessionId, traineeId, action, notes } = req.body;
+
+    // Check if session exists and user has access
+    const session = await ClassroomSession.findByPk(sessionId, {
       include: [
         {
           model: Course,
-          as: 'course'
+          attributes: ['id', 'title', 'trainerId']
         }
       ]
     });
 
-    if (!attendance) {
-      return res.status(404).json({ error: 'Attendance record not found.' });
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
     }
 
-    // Check permissions
-    if (req.user.role !== 'super_admin' && attendance.course.trainerId !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to update this attendance record.' });
+    if (req.user.role !== 'super_admin' && session.Course.trainerId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    const updateData = {};
-    if (req.body.status) updateData.status = req.body.status;
-    if (req.body.notes !== undefined) updateData.notes = req.body.notes;
-
-    await attendance.update(updateData);
-
-    res.json({
-      message: 'Attendance record updated successfully.',
-      attendance: {
-        id: attendance.id,
-        status: attendance.status,
-        notes: attendance.notes
-      }
+    // Check if trainee is enrolled
+    const enrollment = await Course.findOne({
+      where: {
+        id: session.courseId,
+        '$Enrollments.traineeId$': traineeId
+      },
+      include: [
+        {
+          model: require('../models/Enrollment'),
+          where: { traineeId },
+          required: true
+        }
+      ]
     });
+
+    if (!enrollment) {
+      return res.status(400).json({ error: 'Trainee is not enrolled in this course' });
+    }
+
+    // Find or create attendance record
+    let attendanceRecord = await AttendanceRecord.findOne({
+      where: { sessionId, traineeId }
+    });
+
+    if (!attendanceRecord) {
+      attendanceRecord = await AttendanceRecord.create({
+        sessionId,
+        traineeId,
+        checkInMethod: 'manual',
+        status: 'present',
+        isPresent: true
+      });
+    }
+
+    if (action === 'checkin') {
+      if (attendanceRecord.checkInTime) {
+        return res.status(400).json({ error: 'Trainee has already checked in' });
+      }
+
+      const sessionStartTime = new Date(`${session.sessionDate}T${session.startTime}`);
+      const isLate = new Date() > sessionStartTime;
+
+      await attendanceRecord.update({
+        checkInTime: new Date(),
+        checkInMethod: 'manual',
+        status: isLate ? 'late' : 'present',
+        isPresent: true,
+        notes: notes || attendanceRecord.notes
+      });
+
+      res.json({
+        message: 'Manual check-in recorded successfully',
+        attendance: attendanceRecord
+      });
+    } else if (action === 'checkout') {
+      if (!attendanceRecord.checkInTime) {
+        return res.status(400).json({ error: 'Trainee must check in before checking out' });
+      }
+
+      if (attendanceRecord.checkOutTime) {
+        return res.status(400).json({ error: 'Trainee has already checked out' });
+      }
+
+      const checkOutTime = new Date();
+      const duration = Math.round((checkOutTime - attendanceRecord.checkInTime) / (1000 * 60));
+      const sessionEndTime = new Date(`${session.sessionDate}T${session.endTime}`);
+      const leftEarly = checkOutTime < sessionEndTime;
+
+      await attendanceRecord.update({
+        checkOutTime,
+        checkOutMethod: 'manual',
+        status: leftEarly ? 'left_early' : attendanceRecord.status,
+        duration,
+        notes: notes || attendanceRecord.notes
+      });
+
+      res.json({
+        message: 'Manual check-out recorded successfully',
+        attendance: attendanceRecord
+      });
+    }
   } catch (error) {
-    console.error('Update attendance error:', error);
-    res.status(500).json({ error: 'Server error.' });
+    console.error('Error in manual attendance:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// @route   GET /api/attendance/stats/my
-// @desc    Get user's attendance statistics
-// @access  Private
-router.get('/stats/my', auth, async (req, res) => {
+// Get trainee's attendance history
+router.get('/trainee/:traineeId', [
+  auth,
+  requireTrainer,
+  param('traineeId').isUUID().withMessage('Invalid trainee ID')
+], async (req, res) => {
   try {
-    const { courseId, startDate, endDate } = req.query;
-    
-    const whereClause = { userId: req.user.id };
-    if (courseId) whereClause.courseId = courseId;
-    if (startDate) whereClause.date = { [require('sequelize').Op.gte]: startDate };
-    if (endDate) whereClause.date = { [require('sequelize').Op.lte]: endDate };
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-    const totalSessions = await Attendance.count({ where: whereClause });
-    const presentSessions = await Attendance.count({ 
-      where: { ...whereClause, status: 'present' } 
-    });
-    const absentSessions = await Attendance.count({ 
-      where: { ...whereClause, status: 'absent' } 
-    });
-    const lateSessions = await Attendance.count({ 
-      where: { ...whereClause, status: 'late' } 
-    });
+    const { traineeId } = req.params;
+    const { courseId, page = 1, limit = 10 } = req.query;
 
-    const attendanceRate = totalSessions > 0 ? (presentSessions / totalSessions) * 100 : 0;
+    const whereClause = { traineeId };
+    if (courseId) {
+      whereClause['$ClassroomSession.courseId$'] = courseId;
+    }
+
+    const attendance = await AttendanceRecord.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: ClassroomSession,
+          as: 'ClassroomSession',
+          include: [
+            {
+          model: Course,
+          as: 'Course',
+          attributes: ['id', 'title', 'courseType']
+            }
+          ]
+        },
+        {
+          model: User,
+          as: 'User',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        }
+      ],
+      order: [['checkInTime', 'DESC']],
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit)
+    });
 
     res.json({
-      stats: {
-        totalSessions,
-        presentSessions,
-        absentSessions,
-        lateSessions,
-        attendanceRate: Math.round(attendanceRate * 100) / 100
-      }
+      attendance: attendance.rows,
+      totalCount: attendance.count,
+      totalPages: Math.ceil(attendance.count / parseInt(limit)),
+      currentPage: parseInt(page)
     });
   } catch (error) {
-    console.error('Get attendance stats error:', error);
-    res.status(500).json({ error: 'Server error.' });
+    console.error('Error fetching trainee attendance:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-module.exports = router; 
+module.exports = router;

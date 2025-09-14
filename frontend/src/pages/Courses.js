@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { coursesAPI } from '../services/api';
+import { getThumbnailUrl } from '../utils/imageUtils';
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -65,6 +66,8 @@ const Courses = () => {
     };
     return colors[level] || 'badge-secondary';
   };
+
+
 
   if (isLoading) {
     return <LoadingSpinner size="lg" className="mt-8" />;
@@ -178,13 +181,17 @@ const Courses = () => {
 
       {/* Course Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {coursesData?.courses?.map((course) => (
-          <div key={course.id} className="card mb-4 cursor-pointer hover:shadow-lg transition-shadow">
+        {coursesData?.courses?.map((course) => {
+          // RTL language detection for each course
+          const isRTL = course.language === 'arabic' || course.language === 'hebrew' || course.language === 'urdu';
+          
+          return (
+            <div key={course.id} className={`card mb-4 cursor-pointer hover:shadow-lg transition-shadow ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
             <Link to={`/courses/${course.id}`} className="block">
               <div className="aspect-w-16 aspect-h-9 mb-4">
                 {course.thumbnail ? (
                   <img
-                    src={course.thumbnail}
+                    src={getThumbnailUrl(course.thumbnail)}
                     alt={course.title}
                     className="w-full h-48 object-cover rounded-lg"
                   />
@@ -244,7 +251,8 @@ const Courses = () => {
               </Link>
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Empty State */}

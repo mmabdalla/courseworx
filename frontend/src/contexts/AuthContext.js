@@ -63,22 +63,39 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (identifier, password) => {
     try {
-      console.log('Attempting login with identifier:', identifier);
-      const response = await authAPI.login(identifier, password);
-      const { token, user } = response.data;
+      console.log('🔐 AuthContext: Login attempt started');
+      console.log('📧 Identifier:', identifier);
+      console.log('🔑 Password length:', password.length);
+      console.log('🌐 Current location:', window.location.href);
       
-      console.log('Login successful, user:', user);
+      console.log('📡 Calling authAPI.login...');
+      const response = await authAPI.login(identifier, password);
+      console.log('📡 authAPI.login response:', response);
+      
+      const { token, user } = response.data;
+      console.log('🔑 Token received:', token ? 'Yes' : 'No');
+      console.log('👤 User data received:', user);
+      
       localStorage.setItem('token', token);
+      console.log('💾 Token saved to localStorage');
       
       // Set user state after a brief delay to prevent immediate redirect
       setTimeout(() => {
+        console.log('👤 Setting user state...');
         setUser(user);
       }, 50);
       
       toast.success('Login successful!');
+      console.log('✅ Login completed successfully');
       return { success: true };
     } catch (error) {
-      console.error('Login error details:', error.response?.data);
+      console.error('💥 AuthContext: Login error occurred');
+      console.error('💥 Error object:', error);
+      console.error('💥 Error response:', error.response);
+      console.error('💥 Error response data:', error.response?.data);
+      console.error('💥 Error response status:', error.response?.status);
+      console.error('💥 Error message:', error.message);
+      
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
       return { success: false, error: message };

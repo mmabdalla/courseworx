@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const { Enrollment, Course, User } = require('../models');
 const { auth, requireTrainer } = require('../middleware/auth');
 
@@ -375,7 +375,11 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', [
   auth,
   body('courseId').isUUID(),
-  body('paymentAmount').optional().isFloat({ min: 0 }),
+  body('paymentAmount').optional().custom((value) => {
+    if (value === undefined || value === null) return true;
+    const num = parseFloat(value);
+    return !isNaN(num) && num >= 0;
+  }).withMessage('Payment amount must be a valid number greater than or equal to 0'),
   body('notes').optional().isLength({ max: 1000 })
 ], async (req, res) => {
   try {
@@ -384,7 +388,8 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { courseId, paymentAmount, notes } = req.body;
+    const { courseId, notes } = req.body;
+    const paymentAmount = req.body.paymentAmount ? parseFloat(req.body.paymentAmount) : undefined;
 
     // Check if course exists and is published
     const course = await Course.findByPk(courseId);
@@ -942,6 +947,201 @@ router.post('/assign', [
   } catch (error) {
     console.error('Assign trainee error:', error);
     res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   DELETE /api/enrollments/:id
+// @desc    Remove a single enrollment
+// @access  Private (Trainer or Super Admin)
+router.delete('/:id', [
+  auth,
+  requireTrainer,
+  param('id').isUUID().withMessage('Invalid enrollment ID')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+
+    // Find the enrollment
+    const enrollment = await Enrollment.findByPk(id, {
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'firstName', 'lastName', 'email']
+      }, {
+        model: Course,
+        as: 'course',
+        attributes: ['id', 'title']
+      }]
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({ error: 'Enrollment not found.' });
+    }
+
+    // Check if user has permission to remove this enrollment
+    if (req.user.role === 'trainer') {
+      const course = await Course.findByPk(enrollment.courseId);
+      if (!course || course.trainerId !== req.user.id) {
+        return res.status(403).json({ error: 'You can only remove enrollments from your own courses.' });
+      }
+    }
+
+    // Remove the enrollment
+    await enrollment.destroy();
+
+    res.json({
+      message: `${enrollment.user.firstName} ${enrollment.user.lastName} has been removed from ${enrollment.course.title}`,
+      removedEnrollment: {
+        id: enrollment.id,
+        traineeName: `${enrollment.user.firstName} ${enrollment.user.lastName}`,
+        courseTitle: enrollment.course.title
+      }
+    });
+
+  } catch (error) {
+    console.error('Remove enrollment error:', error);
+    res.status(500).json({ error: 'Failed to remove enrollment.' });
+  }
+});
+
+// @route   DELETE /api/enrollments/bulk/remove
+// @desc    Remove multiple enrollments
+// @access  Private (Trainer or Super Admin)
+router.delete('/bulk/remove', [
+  auth,
+  requireTrainer,
+  body('enrollmentIds').isArray({ min: 1 }).withMessage('At least one enrollment ID is required'),
+  body('enrollmentIds.*').isUUID().withMessage('Invalid enrollment ID')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { enrollmentIds } = req.body;
+
+    // Find all enrollments
+    const enrollments = await Enrollment.findAll({
+      where: {
+        id: enrollmentIds
+      },
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'firstName', 'lastName', 'email']
+      }, {
+        model: Course,
+        as: 'course',
+        attributes: ['id', 'title', 'trainerId']
+      }]
+    });
+
+    if (enrollments.length === 0) {
+      return res.status(404).json({ error: 'No enrollments found.' });
+    }
+
+    // Check permissions for each enrollment
+    if (req.user.role === 'trainer') {
+      const unauthorizedEnrollments = enrollments.filter(
+        enrollment => enrollment.course.trainerId !== req.user.id
+      );
+      
+      if (unauthorizedEnrollments.length > 0) {
+        return res.status(403).json({ 
+          error: 'You can only remove enrollments from your own courses.',
+          unauthorizedCourses: unauthorizedEnrollments.map(e => e.course.title)
+        });
+      }
+    }
+
+    // Remove all enrollments
+    const removedCount = await Enrollment.destroy({
+      where: {
+        id: enrollmentIds
+      }
+    });
+
+    res.json({
+      message: `${removedCount} enrollment(s) removed successfully`,
+      removedCount,
+      removedEnrollments: enrollments.map(enrollment => ({
+        id: enrollment.id,
+        traineeName: `${enrollment.user.firstName} ${enrollment.user.lastName}`,
+        courseTitle: enrollment.course.title
+      }))
+    });
+
+  } catch (error) {
+    console.error('Bulk remove enrollments error:', error);
+    res.status(500).json({ error: 'Failed to remove enrollments.' });
+  }
+});
+
+// @route   GET /api/enrollments/course/:courseId/trainee/:traineeId
+// @desc    Get detailed trainee information for a specific course
+// @access  Private (Trainer or Super Admin)
+router.get('/course/:courseId/trainee/:traineeId', [
+  auth,
+  requireTrainer,
+  param('courseId').isUUID().withMessage('Invalid course ID'),
+  param('traineeId').isUUID().withMessage('Invalid trainee ID')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { courseId, traineeId } = req.params;
+
+    // Find the enrollment
+    const enrollment = await Enrollment.findOne({
+      where: {
+        courseId,
+        userId: traineeId
+      },
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'firstName', 'lastName', 'email', 'phone', 'createdAt']
+      }, {
+        model: Course,
+        as: 'course',
+        attributes: ['id', 'title', 'description', 'trainerId']
+      }]
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({ error: 'Enrollment not found.' });
+    }
+
+    // Check permissions
+    if (req.user.role === 'trainer') {
+      if (enrollment.course.trainerId !== req.user.id) {
+        return res.status(403).json({ error: 'You can only view trainees from your own courses.' });
+      }
+    }
+
+    res.json({
+      ...enrollment.user.toJSON(),
+      enrollmentId: enrollment.id,
+      status: enrollment.status,
+      notes: enrollment.notes,
+      paymentAmount: enrollment.paymentAmount,
+      paymentStatus: enrollment.paymentStatus,
+      enrolledAt: enrollment.createdAt,
+      course: enrollment.course
+    });
+
+  } catch (error) {
+    console.error('Get trainee details error:', error);
+    res.status(500).json({ error: 'Failed to get trainee details.' });
   }
 });
 

@@ -1,0 +1,6 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+Never use Bash style commands ever! you only have to use powershell or cmd commands as we are on windows.

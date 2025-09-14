@@ -2,19 +2,79 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { Course, User, Enrollment } = require('../models');
 const { auth, requireSuperAdmin, requireTrainer } = require('../middleware/auth');
+const { requireEnrollment } = require('../middleware/courseAccess');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
 const router = express.Router();
 
+// Helper function to create a safe directory name from a course title
+const createSafeDirectoryName = (title, language = 'english') => {
+  if (!title || typeof title !== 'string') {
+    return 'course-' + Date.now();
+  }
+
+  let safeName;
+  
+  if (language === 'arabic') {
+    // For Arabic courses, use first three words separated by hyphens
+    const words = title.trim().split(/\s+/).filter(word => word.length > 0);
+    safeName = words.slice(0, 3).join('-');
+    
+    // Clean up any remaining special characters
+    safeName = safeName.replace(/[^\p{L}\p{N}\s-]/gu, '');
+    
+    // If still empty, use fallback
+    if (!safeName || safeName.trim() === '') {
+      safeName = 'arabic-course-' + Date.now();
+    }
+  } else {
+    // For all other languages, use the first 3 words approach consistently
+    const words = title.trim().split(/\s+/).filter(word => word.length > 0);
+    safeName = words.slice(0, 3).join('-');
+    
+    // Clean up special characters
+    safeName = safeName
+      .replace(/[^\p{L}\p{N}\s-]/gu, '') // Keep letters (including non-Latin), numbers, spaces, and hyphens
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+      .substring(0, 100); // Limit length to prevent path issues
+    
+    // If the result is empty, use a fallback
+    if (!safeName || safeName.trim() === '') {
+      safeName = 'course-' + Date.now();
+    }
+  }
+  
+  return safeName;
+};
+
 // Multer storage for course images
 const courseImageStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const courseName = req.body.courseName || req.params.courseName;
-    const dir = path.join(__dirname, '../uploads/courses', courseName);
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
+  destination: async function (req, file, cb) {
+    try {
+      let courseName;
+      
+      // Handle both course name and course ID endpoints
+      if (req.params.courseName) {
+        // For course image endpoint, use the courseName parameter
+        courseName = req.params.courseName;
+      } else if (req.params.id) {
+        // For thumbnail endpoint, we need to get the course title
+        // We'll use a temporary name and rename the directory after upload
+        courseName = 'temp-' + req.params.id;
+      } else {
+        courseName = 'temp';
+      }
+      
+      const dir = path.join(__dirname, '../uploads/courses', courseName);
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    } catch (error) {
+      cb(error, null);
+    }
   },
   filename: function (req, file, cb) {
     cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
@@ -41,6 +101,7 @@ router.get('/', async (req, res) => {
     const { 
       category, 
       level, 
+      courseType,
       trainerId, 
       isPublished, 
       page = 1, 
@@ -55,6 +116,7 @@ router.get('/', async (req, res) => {
     
     if (category) whereClause.category = category;
     if (level) whereClause.level = level;
+    if (courseType) whereClause.courseType = courseType;
     if (trainerId) whereClause.trainerId = trainerId;
     // Only apply isPublished filter if it's provided in the query
     if (isPublished !== undefined) {
@@ -76,6 +138,9 @@ router.get('/', async (req, res) => {
 
     const { count, rows: courses } = await Course.findAndCountAll({
       where: whereClause,
+      attributes: { 
+        include: ['id', 'title', 'description', 'shortDescription', 'courseType', 'language', 'thumbnail', 'price', 'duration', 'level', 'category', 'tags', 'isPublished', 'isFeatured', 'maxStudents', 'startDate', 'endDate', 'requirements', 'learningOutcomes', 'curriculum', 'rating', 'totalRatings', 'enrolledStudents', 'trainerId', 'location', 'allowRecording', 'recordForReplay', 'recordForFutureStudents', 'createdAt', 'updatedAt']
+      },
       include: [
         {
           model: User,
@@ -105,10 +170,13 @@ router.get('/', async (req, res) => {
 
 // @route   GET /api/courses/:id
 // @desc    Get course by ID
-// @access  Public
-router.get('/:id', async (req, res) => {
+// @access  Private (Enrolled students or course owner)
+router.get('/:id', auth, requireEnrollment, async (req, res) => {
   try {
     const course = await Course.findByPk(req.params.id, {
+      attributes: { 
+        include: ['id', 'title', 'description', 'shortDescription', 'courseType', 'language', 'thumbnail', 'price', 'duration', 'level', 'category', 'tags', 'isPublished', 'isFeatured', 'maxStudents', 'startDate', 'endDate', 'requirements', 'learningOutcomes', 'curriculum', 'rating', 'totalRatings', 'enrolledStudents', 'trainerId', 'location', 'allowRecording', 'recordForReplay', 'recordForFutureStudents', 'createdAt', 'updatedAt']
+      },
       include: [
         {
           model: User,
@@ -151,7 +219,9 @@ router.post('/', [
   body('description').notEmpty(),
   body('price').isFloat({ min: 0 }),
   body('level').isIn(['beginner', 'intermediate', 'advanced']),
-  body('category').optional().isLength({ min: 2, max: 100 })
+  body('category').optional().isLength({ min: 2, max: 100 }),
+  body('courseType').isIn(['online', 'classroom', 'hybrid']),
+  body('language').isIn(['english', 'arabic', 'french', 'spanish', 'german', 'chinese', 'japanese', 'korean', 'hindi', 'other'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -163,6 +233,8 @@ router.post('/', [
       title,
       description,
       shortDescription,
+      courseType,
+      language,
       price,
       duration,
       level,
@@ -173,13 +245,19 @@ router.post('/', [
       curriculum,
       maxStudents,
       startDate,
-      endDate
+      endDate,
+      location,
+      allowRecording,
+      recordForReplay,
+      recordForFutureStudents
     } = req.body;
 
     const course = await Course.create({
       title,
       description,
       shortDescription,
+      courseType,
+      language,
       price,
       duration,
       level,
@@ -191,6 +269,10 @@ router.post('/', [
       maxStudents,
       startDate,
       endDate,
+      location,
+      allowRecording,
+      recordForReplay,
+      recordForFutureStudents,
       trainerId: req.user.id,
       isPublished: true // Auto-publish for all users
     });
@@ -224,7 +306,9 @@ router.put('/:id', [
   body('description').optional().notEmpty(),
   body('price').optional().isFloat({ min: 0 }),
   body('level').optional().isIn(['beginner', 'intermediate', 'advanced']),
-  body('category').optional().isLength({ min: 2, max: 100 })
+  body('category').optional().isLength({ min: 2, max: 100 }),
+  body('courseType').optional().isIn(['online', 'classroom', 'hybrid']),
+  body('language').optional().isIn(['english', 'arabic', 'french', 'spanish', 'german', 'chinese', 'japanese', 'korean', 'hindi', 'other'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -336,12 +420,95 @@ router.post('/:courseName/image', [auth, requireTrainer, uploadCourseImage.singl
     if (!req.file) {
       return res.status(400).json({ error: 'No image file uploaded.' });
     }
+    
+    // For consistency, we should use the course title instead of courseName parameter
+    // But since this route might be used for existing courses, we'll keep the current behavior
+    // and update the frontend to use the thumbnail route instead for new courses
+    
     res.json({
       message: 'Image uploaded successfully.',
       imageUrl: `/uploads/courses/${req.params.courseName}/${req.file.filename}`
     });
   } catch (error) {
     console.error('Upload course image error:', error);
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// @route   POST /api/courses/:id/thumbnail
+// @desc    Upload and set course thumbnail (Super Admin or Trainer)
+// @access  Private
+router.post('/:id/thumbnail', [auth, requireTrainer, uploadCourseImage.single('image')], async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded.' });
+    }
+
+    const course = await Course.findByPk(req.params.id);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found.' });
+    }
+
+    // Check permissions
+    if (req.user.role !== 'super_admin' && course.trainerId !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to update this course.' });
+    }
+
+    // Generate proper course directory name
+    const courseDirName = createSafeDirectoryName(course.title, course.language);
+    const tempDir = path.join(__dirname, '../uploads/courses', `temp-${req.params.id}`);
+    const finalDir = path.join(__dirname, '../uploads/courses', courseDirName);
+    
+    console.log('📁 Creating directory for course:', {
+      originalTitle: course.title,
+      safeDirName: courseDirName,
+      tempDir: tempDir,
+      finalDir: finalDir
+    });
+    
+    // Validate the safe directory name
+    if (!courseDirName || courseDirName.trim() === '') {
+      throw new Error('Failed to generate safe directory name from course title');
+    }
+    
+    // Create final directory if it doesn't exist
+    try {
+      if (!fs.existsSync(finalDir)) {
+        fs.mkdirSync(finalDir, { recursive: true });
+        console.log('✅ Directory created successfully:', finalDir);
+      } else {
+        console.log('✅ Directory already exists:', finalDir);
+      }
+    } catch (dirError) {
+      console.error('❌ Error creating directory:', dirError);
+      throw new Error(`Failed to create directory: ${dirError.message}`);
+    }
+    
+    // Move file from temp directory to final directory
+    const tempFilePath = req.file.path;
+    const finalFilePath = path.join(finalDir, path.basename(req.file.filename));
+    
+    // Copy file to final location
+    fs.copyFileSync(tempFilePath, finalFilePath);
+    
+    // Remove temp file and directory
+    fs.unlinkSync(tempFilePath);
+    if (fs.existsSync(tempDir)) {
+      fs.rmdirSync(tempDir, { recursive: true });
+    }
+    
+    // Generate image URL using proxy route to avoid CORS issues
+    const imageUrl = `/uploads/courses/${courseDirName}/${path.basename(req.file.filename)}`;
+    
+    // Update course thumbnail
+    await course.update({ thumbnail: imageUrl });
+
+    res.json({
+      message: 'Course thumbnail updated successfully.',
+      imageUrl: imageUrl
+    });
+  } catch (error) {
+    console.error('Upload course thumbnail error:', error);
     res.status(500).json({ error: 'Server error.' });
   }
 });
@@ -488,6 +655,9 @@ router.get('/trainer/:trainerId', auth, async (req, res) => {
 
     const { count, rows: courses } = await Course.findAndCountAll({
       where: whereClause,
+      attributes: { 
+        include: ['id', 'title', 'description', 'shortDescription', 'courseType', 'language', 'thumbnail', 'price', 'duration', 'level', 'category', 'tags', 'isPublished', 'isFeatured', 'maxStudents', 'startDate', 'endDate', 'requirements', 'learningOutcomes', 'curriculum', 'rating', 'totalRatings', 'enrolledStudents', 'trainerId', 'location', 'allowRecording', 'recordForReplay', 'recordForFutureStudents', 'createdAt', 'updatedAt']
+      },
       include: [
         {
           model: User,

@@ -24,10 +24,28 @@ const Course = sequelize.define('Course', {
     allowNull: false
   },
   shortDescription: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(1000),
     allowNull: true,
     validate: {
-      len: [0, 500]
+      len: [0, 1000]
+    }
+  },
+  courseType: {
+    type: DataTypes.ENUM('online', 'classroom', 'hybrid'),
+    allowNull: false,
+    defaultValue: 'online',
+    validate: {
+      notEmpty: true,
+      isIn: [['online', 'classroom', 'hybrid']]
+    }
+  },
+  language: {
+    type: DataTypes.ENUM('english', 'arabic', 'french', 'spanish', 'german', 'chinese', 'japanese', 'korean', 'hindi', 'other'),
+    allowNull: false,
+    defaultValue: 'english',
+    validate: {
+      notEmpty: true,
+      isIn: [['english', 'arabic', 'french', 'spanish', 'german', 'chinese', 'japanese', 'korean', 'hindi', 'other']]
     }
   },
   thumbnail: {
@@ -108,6 +126,25 @@ const Course = sequelize.define('Course', {
   enrolledStudents: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    validate: {
+      len: [0, 500]
+    }
+  },
+  allowRecording: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  recordForReplay: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  recordForFutureStudents: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'courses',
@@ -123,6 +160,12 @@ const Course = sequelize.define('Course', {
     },
     {
       fields: ['isFeatured']
+    },
+    {
+      fields: ['courseType']
+    },
+    {
+      fields: ['language']
     }
   ]
 });

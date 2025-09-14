@@ -11,6 +11,10 @@ const CourseContent = sequelize.define('CourseContent', {
     type: DataTypes.UUID,
     allowNull: false
   },
+  sectionId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   title: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -96,10 +100,10 @@ const CourseContent = sequelize.define('CourseContent', {
       fields: ['courseId']
     },
     {
-      fields: ['type']
+      fields: ['sectionId']
     },
     {
-      fields: ['isPublished']
+      fields: ['type']
     },
     {
       fields: ['order']

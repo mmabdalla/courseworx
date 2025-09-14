@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PasswordChangeModal from './PasswordChangeModal';
+import ShoppingCart from './ShoppingCart';
 import {
   HomeIcon,
   AcademicCapIcon,
@@ -9,6 +10,11 @@ import {
   UserIcon,
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
+  PuzzlePieceIcon,
+  CurrencyDollarIcon,
+  BanknotesIcon,
+  ShoppingCartIcon,
+  CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
 
 const Layout = () => {
@@ -17,6 +23,7 @@ const Layout = () => {
   const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
 
   // Check if user requires password change
   useEffect(() => {
@@ -41,7 +48,12 @@ const Layout = () => {
 
   const navigation = [
     { name: 'Courses', href: '/courses', icon: AcademicCapIcon },
+    ...(user?.role === 'trainee' ? [{ name: 'Attendance Tracker', href: '/attendance/tracker', icon: CalendarDaysIcon }] : []),
     ...(isSuperAdmin ? [{ name: 'Users', href: '/users', icon: UsersIcon }] : []),
+    ...(isSuperAdmin ? [{ name: 'Plugin Management', href: '/plugin-management', icon: PuzzlePieceIcon }] : []),
+    ...(isSuperAdmin ? [{ name: 'Financial Dashboard', href: '/financial-dashboard', icon: CurrencyDollarIcon }] : []),
+    ...(isSuperAdmin ? [{ name: 'Currency Management', href: '/admin/currencies', icon: CurrencyDollarIcon }] : []),
+    ...(user?.role === 'trainer' ? [{ name: 'My Earnings', href: '/trainer/earnings', icon: BanknotesIcon }] : []),
   ];
 
   const handleLogout = () => {
@@ -92,6 +104,18 @@ const Layout = () => {
 
         {/* User dropdown menu */}
         <div className="flex flex-1 items-center justify-end gap-x-4 lg:gap-x-6">
+          {/* Shopping Cart - Only for trainees */}
+          {user?.role === 'trainee' && (
+            <button
+              onClick={() => setCartOpen(true)}
+              className="p-2 text-gray-600 hover:text-gray-900 relative"
+              title="Shopping Cart"
+            >
+              <ShoppingCartIcon className="h-6 w-6" />
+              {/* Cart badge would go here if we had cart item count */}
+            </button>
+          )}
+          
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
           
           <div className="relative user-menu">
@@ -155,6 +179,12 @@ const Layout = () => {
       <PasswordChangeModal 
         isOpen={showPasswordModal} 
         onClose={() => setShowPasswordModal(false)} 
+      />
+      
+      {/* Shopping Cart Modal */}
+      <ShoppingCart 
+        isOpen={cartOpen} 
+        onClose={() => setCartOpen(false)} 
       />
     </div>
   );
