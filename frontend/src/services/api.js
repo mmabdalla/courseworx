@@ -10,7 +10,7 @@ const getApiBaseUrl = () => {
     return 'http://localhost:5000/api';
   }
   
-  // If we're on a network IP (like 10.0.0.96), use the same IP for backend
+  // If we're on a network IP (like 10.0.0.50), use the same IP for backend
   // Extract the IP address from the current location
   const networkIP = hostname;
   return `http://${networkIP}:5000/api`;

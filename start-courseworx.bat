@@ -62,9 +62,9 @@ if %errorlevel% equ 0 (
     )
 )
 
-netstat -an | findstr ":3000" >nul 2>&1
+netstat -an | findstr ":3050" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ⚠️  Port 3000 is already in use
+    echo ⚠️  Port 3050 is already in use
     echo    This might be another CourseWorx instance or different application
     set /p choice="Do you want to continue anyway? (y/N): "
     if /i not "%choice%"=="y" (
@@ -79,7 +79,7 @@ echo.
 
 echo 🚀 Starting CourseWorx...
 echo.
-echo 📱 Frontend will be available at: http://localhost:3000
+echo 📱 Frontend will be available at: http://localhost:3050
 echo 🔧 Backend API will be available at: http://localhost:5000
 echo.
 echo 💡 To stop the application, press Ctrl+C

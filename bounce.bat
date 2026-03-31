@@ -47,11 +47,11 @@ if %errorlevel% equ 0 (
     timeout /t 2 /nobreak >nul
 )
 
-netstat -an | findstr ":3000" >nul 2>&1
+netstat -an | findstr ":3050" >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ⚠️  Port 3000 is still in use
+    echo ⚠️  Port 3050 is still in use
     echo    Attempting to force clear...
-    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000"') do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3050"') do (
         taskkill /F /PID %%a >nul 2>&1
     )
     timeout /t 2 /nobreak >nul
@@ -63,7 +63,7 @@ echo.
 REM Step 4: Start the servers
 echo 📋 Step 4: Starting CourseWorx servers...
 echo.
-echo 📱 Frontend will be available at: http://localhost:3000
+echo 📱 Frontend will be available at: http://localhost:3050
 echo 🔧 Backend API will be available at: http://localhost:5000
 echo.
 echo 💡 To stop the application, press Ctrl+C

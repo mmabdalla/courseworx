@@ -96,16 +96,16 @@ Write-Host "npm version: $npmVersion" -ForegroundColor Green
 # Check for existing processes and ports
 Write-Host "Checking for existing processes and ports..." -ForegroundColor Cyan
 
-# Check if ports 3000 and 5000 are in use
-$port3000InUse = Test-PortInUse -Port 3000
+# Check if ports 3050 and 5000 are in use
+$port3050InUse = Test-PortInUse -Port 3050
 $port5000InUse = Test-PortInUse -Port 5000
 
-if ($port3000InUse -or $port5000InUse) {
-    Write-Host "Ports 3000 and/or 5000 are in use. Cleaning up..." -ForegroundColor Yellow
+if ($port3050InUse -or $port5000InUse) {
+    Write-Host "Ports 3050 and/or 5000 are in use. Cleaning up..." -ForegroundColor Yellow
     
-    if ($port3000InUse) {
-        Write-Host "Port 3000 is in use. Killing processes..." -ForegroundColor Yellow
-        Kill-ProcessesOnPort -Port 3000
+    if ($port3050InUse) {
+        Write-Host "Port 3050 is in use. Killing processes..." -ForegroundColor Yellow
+        Kill-ProcessesOnPort -Port 3050
     }
     
     if ($port5000InUse) {
@@ -118,16 +118,16 @@ if ($port3000InUse -or $port5000InUse) {
     
     # Wait for ports to be free
     Write-Host "Waiting for ports to be free..." -ForegroundColor Cyan
-    $port3000Free = Wait-ForPortFree -Port 3000
+    $port3050Free = Wait-ForPortFree -Port 3050
     $port5000Free = Wait-ForPortFree -Port 5000
     
-    if (-not $port3000Free -or -not $port5000Free) {
+    if (-not $port3050Free -or -not $port5000Free) {
         Write-Host "ERROR: Could not free up required ports. Please check manually." -ForegroundColor Red
         Read-Host "Press Enter to exit"
         exit 1
     }
 } else {
-    Write-Host "Ports 3000 and 5000 are free." -ForegroundColor Green
+    Write-Host "Ports 3050 and 5000 are free." -ForegroundColor Green
 }
 
 # Check if dependencies are installed
@@ -152,8 +152,8 @@ if (-not (Test-Path "frontend\node_modules")) {
 
 # Final port check before starting
 Write-Host "Final port availability check..." -ForegroundColor Cyan
-if (Test-PortInUse -Port 3000) {
-    Write-Host "ERROR: Port 3000 is still in use after cleanup!" -ForegroundColor Red
+if (Test-PortInUse -Port 3050) {
+    Write-Host "ERROR: Port 3050 is still in use after cleanup!" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -165,11 +165,11 @@ if (Test-PortInUse -Port 5000) {
 }
 
 Write-Host "All ports are free. Starting CourseWorx..." -ForegroundColor Green
-Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
+Write-Host "Frontend: http://localhost:3050" -ForegroundColor Cyan
 Write-Host "Backend: http://localhost:5000" -ForegroundColor Cyan
 Write-Host "Network Access:" -ForegroundColor Cyan
-Write-Host "  Frontend: http://10.0.0.96:3000" -ForegroundColor Cyan
-Write-Host "  Backend: http://10.0.0.96:5000" -ForegroundColor Cyan
+Write-Host "  Frontend: http://10.0.0.50:3050" -ForegroundColor Cyan
+Write-Host "  Backend: http://10.0.0.50:5000" -ForegroundColor Cyan
 
 # Start both frontend and backend
 Write-Host "Starting application..." -ForegroundColor Green

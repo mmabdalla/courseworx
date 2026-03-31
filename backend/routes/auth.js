@@ -10,7 +10,7 @@ const router = express.Router();
 // Handle OPTIONS preflight for auth routes
 router.options('*', (req, res) => {
   // Use the same CORS origin as the main server
-  const allowedOrigins = ['http://localhost:3000', 'http://10.0.0.96:3000', 'http://127.0.0.1:3000'];
+  const allowedOrigins = ['http://localhost:3050', 'http://10.0.0.50:3050', 'http://127.0.0.1:3050'];
   const origin = req.headers.origin;
   
   if (allowedOrigins.includes(origin)) {

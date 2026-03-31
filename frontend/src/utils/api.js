@@ -11,8 +11,8 @@ const getApiUrl = () => {
   const hostname = window.location.hostname;
   
   // If accessing from server IP, use server IP for API
-  if (hostname === '10.0.0.96') {
-    return 'http://10.0.0.96:5000/api';
+  if (hostname === '10.0.0.50') {
+    return 'http://10.0.0.50:5000/api';
   }
   
   // Default to localhost for development

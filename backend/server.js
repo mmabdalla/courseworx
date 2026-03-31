@@ -49,16 +49,16 @@ const corsOptions = {
     
     // Allow localhost and server IP addresses
     const allowedOrigins = [
-      'http://localhost:3000', 
-      'http://127.0.0.1:3000',
-      'http://10.0.0.96:3000',
-      'http://10.0.0.96:5000',
+      'http://localhost:3050', 
+      'http://127.0.0.1:3050',
+      'http://10.0.0.50:3050',
+      'http://10.0.0.50:5000',
       'http://localhost:5000',
       'http://127.0.0.1:5000'
     ];
     
     // Allow any IP in the 10.0.0.x range for mobile devices
-    if (origin.match(/^http:\/\/10\.0\.0\.\d+:3000$/)) {
+    if (origin.match(/^http:\/\/10\.0\.0\.\d+:3050$/)) {
       console.log('CORS: Allowing network IP:', origin);
       return callback(null, true);
     }
@@ -75,9 +75,9 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Allow any custom hostname with port 3000 for development
-    if (origin.match(/^http:\/\/[^:]+:3000$/)) {
-      console.log('CORS: Allowing custom hostname port 3000:', origin);
+    // Allow any custom hostname with port 3050 for development
+    if (origin.match(/^http:\/\/[^:]+:3050$/)) {
+      console.log('CORS: Allowing custom hostname port 3050:', origin);
       return callback(null, true);
     }
     
@@ -103,7 +103,7 @@ const corsOptions = {
 
 // File serving CORS configuration (no credentials needed for static files)
 const filesCorsOptions = {
-  origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://10.0.0.96:3000', 'http://127.0.0.1:3000'],
+  origin: process.env.CORS_ORIGIN || ['http://localhost:3050', 'http://10.0.0.50:3050', 'http://127.0.0.1:3050'],
   credentials: false,
   methods: ['GET', 'HEAD', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Range'],
