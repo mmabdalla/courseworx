@@ -12,7 +12,7 @@ $TestBaseDir = "test"
 $PostgresHost = "localhost"
 $PostgresPort = "5432"
 $PostgresUser = "postgres"
-$PostgresPassword = "password"  # Update this with your actual password
+$PostgresPassword = "7ouDa-123q"  # Updated to match project environment
 $FrontendPort = if ($env:FRONTEND_PORT) { $env:FRONTEND_PORT } else { "3050" }
 $BackendPort = if ($env:PORT) { $env:PORT } else { "5000" }
 

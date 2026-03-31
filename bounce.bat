@@ -18,15 +18,11 @@ echo 🔄 Bouncing CourseWorx servers...
 echo.
 
 REM Step 1: Kill all Node.js processes
-echo 📋 Step 1: Stopping all Node.js processes...
-tasklist /FI "IMAGENAME eq node.exe" 2>NUL | find /I /N "node.exe">NUL
-if "%ERRORLEVEL%"=="0" (
-    echo Found Node.js processes. Stopping them...
-    taskkill /F /IM node.exe >nul 2>&1
-    echo ✅ All Node.js processes stopped
-) else (
-    echo ℹ️  No Node.js processes found
-)
+echo 📋 Step 1: Stopping Node.js processes on 3000, 3050, 5000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3050 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+echo ✅ Processes stopped
 
 REM Step 2: Wait a moment for ports to clear
 echo.
@@ -62,9 +58,11 @@ echo.
 
 REM Step 4: Start the servers
 echo 📋 Step 4: Starting CourseWorx servers...
+set FRONTEND_PORT=3050
+set BACKEND_PORT=5000
 echo.
-echo 📱 Frontend will be available at: http://localhost:3050
-echo 🔧 Backend API will be available at: http://localhost:5000
+echo 📱 Frontend will be available at: http://localhost:%FRONTEND_PORT%
+echo 🔧 Backend API will be available at: http://localhost:%BACKEND_PORT%
 echo.
 echo 💡 To stop the application, press Ctrl+C
 echo.

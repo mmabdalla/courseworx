@@ -48,13 +48,13 @@ const corsOptions = {
     }
     
     // Allow localhost and server IP addresses
+    // Allow configured origins and local development
+    const allowedFromConfig = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
     const allowedOrigins = [
-      'http://localhost:3050', 
+      'http://localhost:3050',
       'http://127.0.0.1:3050',
       'http://10.0.0.50:3050',
-      'http://10.0.0.50:5000',
-      'http://localhost:5000',
-      'http://127.0.0.1:5000'
+      ...allowedFromConfig
     ];
     
     // Allow any IP in the 10.0.0.x range for mobile devices
@@ -166,6 +166,18 @@ app.use('/api/trainee-progress', traineeProgressRoutes);
 app.use('/api/trainee-attendance', traineeAttendanceRoutes);
 app.use('/api/trainee-assignments', traineeAssignmentsRoutes);
 app.use('/api/trainee-notes', traineeNotesRoutes);
+
+// Production: Serve frontend build assets and handle SPA routing
+if (process.env.NODE_ENV === 'production') {
+  const buildPath = path.join(__dirname, '../frontend/build');
+  app.use(express.static(buildPath));
+  
+  // Custom SPA catch-all (must be after /api routes)
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+}
 
 // Financial routes
 app.use('/api/financial', financialRoutes);

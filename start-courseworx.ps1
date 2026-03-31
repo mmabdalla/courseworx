@@ -39,6 +39,19 @@ function Kill-ProcessesOnPort {
     }
 }
 
+# Kill any processes on 3000, 3050, 5000
+$portsToKill = @(3000, 3050, 5000)
+foreach ($port in $portsToKill) {
+    $processIds = (Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue).OwningProcess
+    if ($processIds) {
+        Write-Host "Stopping processes on port $port..." -ForegroundColor Yellow
+        foreach ($pid in $processIds) {
+            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+Write-Host "All targets cleared" -ForegroundColor Green
+
 # Function to kill all Node.js processes
 function Kill-AllNodeProcesses {
     try {
@@ -97,15 +110,17 @@ Write-Host "npm version: $npmVersion" -ForegroundColor Green
 Write-Host "Checking for existing processes and ports..." -ForegroundColor Cyan
 
 # Check if ports 3050 and 5000 are in use
-$port3050InUse = Test-PortInUse -Port 3050
-$port5000InUse = Test-PortInUse -Port 5000
+$FrontendPort = 3050
+$BackendPort = 5000
+$port3050InUse = Test-PortInUse -Port $FrontendPort
+$port5000InUse = Test-PortInUse -Port $BackendPort
 
 if ($port3050InUse -or $port5000InUse) {
-    Write-Host "Ports 3050 and/or 5000 are in use. Cleaning up..." -ForegroundColor Yellow
+    Write-Host "Ports $FrontendPort and/or $BackendPort are in use. Cleaning up..." -ForegroundColor Yellow
     
     if ($port3050InUse) {
-        Write-Host "Port 3050 is in use. Killing processes..." -ForegroundColor Yellow
-        Kill-ProcessesOnPort -Port 3050
+        Write-Host "Port $FrontendPort is in use. Killing processes..." -ForegroundColor Yellow
+        Kill-ProcessesOnPort -Port $FrontendPort
     }
     
     if ($port5000InUse) {

@@ -1,3 +1,48 @@
+📅 Last Updated: 2026-03-31 05:32:00
+👨‍💻 Developer: AI Assistant (Antigravity)
+🎯 Focus: BUP v2.0.6 - NETWORK REFACTORING AND ONBOARDING FIX
+
+CourseWorx v2.0.6 - Configurable Networking and Logic Resolution
+==============================================================
+
+🎯 NETWORK CONFIGURABILITY & REDIRECTION FIX
+--------------------------------------------
+**Date**: 2026-03-31
+**Scope**: Refined network ports and ensured cross-origin compatibility for onboarding logic.
+**Status**: ✅ COMPLETED SUCCESSFULLY
+
+### 🚀 ACHIEVEMENTS
+- ✅ **BUP Rule**: Formalized "Bump, Update, Push" process in `CONSTITUTION.md`.
+- ✅ **Port Refactor**: Standardized Frontend on `3050` and Backend on `5000` via configurable `.env` and `craco.config.js`.
+- ✅ **Onboarding Fix**: Resolved CORS-blocked `setup-status` check, ensuring empty databases correctly redirect to `/setup`.
+- ✅ **Production Alignment**: Added logic to `server.js` to serve frontend production build on Port 5000 as required by Nginx.
+- ✅ **Clean State**: Updated `bounce.bat` and `start-courseworx.ps1` to purge legacy processes on ports 3000, 3050, and 5000.
+
+---
+
+📅 Last Updated: 2026-03-31 04:43:00
+👨‍💻 Developer: AI Assistant (Antigravity)
+🎯 Focus: STABILIZATION AND NETWORK MIGRATION COMPLETE
+
+CourseWorx v2.0.5 - stabilization, Code Restoration, and Network Migration
+========================================================================
+
+🎯 CRITICAL STABILIZATION AND NETWORK MIGRATION
+----------------------------------------------
+**Date**: 2026-03-31
+**Scope**: Finalized migration of hardcoded IPs and standardized ports.
+**Status**: ✅ COMPLETED SUCCESSFULLY
+
+### 🚀 ACHIEVEMENTS
+- ✅ **Network Migration**: Standardized all components to use `10.0.0.50:3050` (Frontend) and `5000` (Backend).
+- ✅ **Code Restoration**: Manually restored complex frontend components (ProfessionalVideoPlayer.js, CourseCurrencyConfig.js) with original comments and logic.
+- ✅ **Testing Framework**: Resolved database isolation issues in `User-simple.test.js`; verified 100% pass on real PostgreSQL.
+- ✅ **Production Build**: Resolved react-query dependency conflicts and verified successful production build.
+- ✅ **Governance**: Consolidated all rules into `CONSTITUTION.md` and created a comprehensive `ROADMAP.md`.
+- ✅ **Deployment**: Integrated all fixes into `bounce.bat`, `switch-to-courseworx.bat`, and `Deploy.ps1`.
+
+---
+
 📅 Last Updated: 2024-12-19 21:30:00
 👨‍💻 Developer: AI Assistant
 🎯 Focus: GIT REPOSITORY CLEANUP - LARGE FILES REMOVED SUCCESSFULLY

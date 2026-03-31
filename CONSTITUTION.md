@@ -19,6 +19,10 @@ The project adheres strictly to [Semantic Versioning (SemVer)](https://semver.or
 - **Feature/Fix Branches**: All work must be performed on `feature/` or `fix/` branches branched from `develop`.
 - **Merge Requirements**: PRs to `develop` must pass all backend tests and a successful production build.
 - **Action Logging**: Always append summarizing actions to `version.txt` at the end of each significant change.
+- **BUP (Bump, Update, Push)**: Every significant task completion requires a "BUP" phase:
+    1. **Bump**: Increment the project version (SemVer).
+    2. **Update**: Finalize `CHANGELOG.md` and `version.txt` with latest changes.
+    3. **Push**: Commit and push changes to the repository.
 
 ### 1.3 Documentation & Comments
 - **Code Comments**: NEVER remove functional or explanatory comments. High-quality inline documentation is mandatory.
