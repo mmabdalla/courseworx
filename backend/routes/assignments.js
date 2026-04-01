@@ -84,6 +84,27 @@ router.post('/', [
       ]
     });
 
+    // Notify Enrolled Trainees and Super Admins
+    const notificationService = require('../services/NotificationService');
+    const trainerName = `${assignmentWithDetails.trainer.firstName} ${assignmentWithDetails.trainer.lastName}`;
+    const courseTitle = assignmentWithDetails.course.title;
+
+    // To Trainees
+    await notificationService.notifyEnrolledTrainees(courseId, {
+      title: 'New Assignment Assigned',
+      message: `${trainerName} assigned a new task: "${title}" in "${courseTitle}".`,
+      type: 'info',
+      link: `/courses/${courseId}/assignments/${assignment.id}`
+    });
+
+    // To Super Admins
+    await notificationService.notifySuperAdmins({
+      title: 'New Assignment Activity',
+      message: `Trainer ${trainerName} created assignment "${title}" for "${courseTitle}".`,
+      type: 'info',
+      link: `/admin/courses/${courseId}`
+    });
+
     res.status(201).json({
       message: 'Assignment created successfully.',
       assignment: assignmentWithDetails

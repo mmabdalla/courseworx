@@ -34,6 +34,7 @@ import AttendanceTracker from './pages/AttendanceTracker';
 import ClassroomSessions from './pages/ClassroomSessions';
 import AttendanceDashboard from './pages/AttendanceDashboard';
 import AttendanceJoin from './pages/AttendanceJoin';
+import AdminLogs from './pages/AdminLogs';
 
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading, setupRequired } = useAuth();
@@ -180,6 +181,11 @@ const AppRoutes = () => {
         <Route path="/admin/currencies/:currencyId" element={
           <PrivateRoute allowedRoles={['super_admin']}>
             <CurrencyDetail />
+          </PrivateRoute>
+        } />
+        <Route path="/admin/logs" element={
+          <PrivateRoute allowedRoles={['super_admin']}>
+            <AdminLogs />
           </PrivateRoute>
         } />
         <Route path="/currency-test" element={<CurrencyTest />} />

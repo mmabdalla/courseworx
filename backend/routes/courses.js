@@ -287,6 +287,17 @@ router.post('/', [
       ]
     });
 
+    // Notify Super Admins
+    const notificationService = require('../services/NotificationService');
+    const trainerName = `${courseWithTrainer.trainer.firstName} ${courseWithTrainer.trainer.lastName}`;
+    
+    await notificationService.notifySuperAdmins({
+      title: 'New Course Created',
+      message: `Trainer ${trainerName} has created a new course: "${course.title}".`,
+      type: 'info',
+      link: `/courses/${course.id}`
+    });
+
     res.status(201).json({
       message: 'Course created successfully.',
       course: courseWithTrainer

@@ -8,6 +8,10 @@ const { sequelize } = require('./config/database');
 // Import models to ensure they are registered with Sequelize
 require('./models');
 
+// Logger and Notification Service
+const logger = require('./utils/logger');
+const notificationService = require('./services/NotificationService');
+
 // Plugin System
 const pluginLoader = require('./core/plugin-loader');
 const pluginEventSystem = require('./core/plugin-events');
@@ -32,6 +36,8 @@ const traineeProgressRoutes = require('./routes/traineeProgress');
 const traineeAttendanceRoutes = require('./routes/traineeAttendance');
 const traineeAssignmentsRoutes = require('./routes/traineeAssignments');
 const traineeNotesRoutes = require('./routes/traineeNotes');
+const notificationRoutes = require('./routes/notifications');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,60 +45,39 @@ const PORT = process.env.PORT || 5000;
 // Global CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log('CORS Origin received:', origin);
+    logger.info(`CORS Origin received: ${origin}`);
     
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) {
-      console.log('CORS: Allowing request with no origin');
       return callback(null, true);
     }
     
-    // Allow localhost and server IP addresses
-    // Allow configured origins and local development
+    // Configurable origins from .env
     const allowedFromConfig = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
+    const serverIP = process.env.SERVER_IP || '10.0.0.50';
+    
     const allowedOrigins = [
       'http://localhost:3050',
       'http://127.0.0.1:3050',
-      'http://10.0.0.50:3050',
+      `http://${serverIP}:3050`,
       ...allowedFromConfig
     ];
     
-    // Allow any IP in the 10.0.0.x range for mobile devices
+    // Dynamic network IP matching (10.0.0.x range)
     if (origin.match(/^http:\/\/10\.0\.0\.\d+:3050$/)) {
-      console.log('CORS: Allowing network IP:', origin);
       return callback(null, true);
     }
     
-    // Allow any localhost port for development
-    if (origin.match(/^http:\/\/localhost:\d+$/)) {
-      console.log('CORS: Allowing localhost port:', origin);
-      return callback(null, true);
-    }
-    
-    // Allow any 127.0.0.1 port for development
-    if (origin.match(/^http:\/\/127\.0\.0\.1:\d+$/)) {
-      console.log('CORS: Allowing 127.0.0.1 port:', origin);
-      return callback(null, true);
-    }
-    
-    // Allow any custom hostname with port 3050 for development
-    if (origin.match(/^http:\/\/[^:]+:3050$/)) {
-      console.log('CORS: Allowing custom hostname port 3050:', origin);
-      return callback(null, true);
-    }
-    
-    // Allow any localhost-like hostname for development
-    if (origin.match(/^http:\/\/[a-zA-Z0-9-]+:\d+$/)) {
-      console.log('CORS: Allowing custom hostname with port:', origin);
+    // Local development matching
+    if (origin.match(/^http:\/\/localhost:\d+$/) || origin.match(/^http:\/\/127\.0\.0\.1:\d+$/)) {
       return callback(null, true);
     }
     
     if (allowedOrigins.includes(origin)) {
-      console.log('CORS: Allowing from allowed origins:', origin);
       return callback(null, true);
     }
     
-    console.log('CORS: Blocking origin:', origin);
+    logger.warn(`CORS: Blocking origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -166,6 +151,8 @@ app.use('/api/trainee-progress', traineeProgressRoutes);
 app.use('/api/trainee-attendance', traineeAttendanceRoutes);
 app.use('/api/trainee-assignments', traineeAssignmentsRoutes);
 app.use('/api/trainee-notes', traineeNotesRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Production: Serve frontend build assets and handle SPA routing
 if (process.env.NODE_ENV === 'production') {
@@ -205,7 +192,13 @@ app.get('/api/mobile-test', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Unhandled request error:', err);
+  
+  // Notify Super Admins of Backend Errors
+  notificationService.reportSystemError({
+    message: err.message || 'An unexpected backend error occurred.'
+  }).catch(e => logger.error('Failed to send error notification:', e));
+
   res.status(500).json({ 
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'

@@ -449,6 +449,27 @@ router.post('/', [
       ]
     });
 
+    // Notify Trainer and Super Admins
+    const notificationService = require('../services/NotificationService');
+    const traineeName = `${enrollmentWithDetails.user.firstName} ${enrollmentWithDetails.user.lastName}`;
+    const courseTitle = enrollmentWithDetails.course.title;
+
+    // To Trainer
+    await notificationService.notifyUser(enrollmentWithDetails.course.trainerId, {
+      title: 'New Course Enrollment',
+      message: `${traineeName} has enrolled in your course "${courseTitle}".`,
+      type: 'success',
+      link: `/courses/${courseId}/trainees`
+    });
+
+    // To Super Admins
+    await notificationService.notifySuperAdmins({
+      title: 'New Enrollment Activity',
+      message: `${traineeName} enrolled in "${courseTitle}".`,
+      type: 'info',
+      link: '/users'
+    });
+
     res.status(201).json({
       message: 'Enrollment created successfully.',
       enrollment: enrollmentWithDetails

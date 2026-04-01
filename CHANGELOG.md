@@ -5,16 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.6] - 2026-03-31
+## [2.0.7] - 2026-04-01
 ### Added
-- Configurable environment files for frontend (`.env`) and backend (`.env`).
-- Production static serving logic in the backend (Port 5000) to align with Nginx requirements.
-- Standardized the "BUP" process (Bump, Update, Push) in `CONSTITUTION.md`.
+- Universal Role-based Notification System:
+    - Notification drawer and bell in the primary header.
+    - Automatic notifications for enrollments, course creation, and assignment assignments.
+    - Global error synchronization alerting Super Admins of backend failures.
+- Super Admin System Logs Page:
+    - Real-time backend log streaming (`system.log`) with role-based activity colors.
+    - Administrative capability to clear logs via UI.
+- Premium Header Refactor:
+    - Refactored user profile menu to show only initials/icon by default.
+    - Name, role, and logout moved to a premium dropdown for a cleaner, modern look.
+
+### Changed
+- Networking Model:
+    - Fully configurable environment-driven IP addressing (Purged all `10.0.0.96` references).
+    - Dynamic CORS addressing based on configurable `SERVER_IP` variables.
 
 ### Fixed
-- Onboarding logic bug where empty databases incorrectly redirected to the login screen instead of setup.
-- CORS-blocked `setup-status` check when using standardized port 3050.
-- Scripted process management to ensure legacy port 3000 sessions are purged on restart.
+- User Management Modal: Resolved "Failed to save user" issue when updating passwords.
+
+## [2.0.6] - 2026-03-31
 
 ## [1.0.1] - 2026-03-31
 ### Added

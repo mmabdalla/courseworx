@@ -9,6 +9,7 @@ const QuizQuestion = require('./QuizQuestion');
 const LessonCompletion = require('./LessonCompletion');
 const ClassroomSession = require('./ClassroomSession');
 const AttendanceRecord = require('./AttendanceRecord');
+const Notification = require('./Notification');
 
 // Initialize models that use the factory pattern
 const { sequelize } = require('../config/database');
@@ -22,6 +23,7 @@ User.hasMany(Attendance, { as: 'attendance', foreignKey: 'userId' });
 User.hasMany(Assignment, { as: 'createdAssignments', foreignKey: 'trainerId' });
 User.hasMany(LessonCompletion, { as: 'lessonCompletions', foreignKey: 'userId' });
 User.hasMany(UserNotes, { as: 'notes', foreignKey: 'userId' });
+User.hasMany(Notification, { as: 'notifications', foreignKey: 'userId' });
 
 // Course associations
 Course.belongsTo(User, { as: 'trainer', foreignKey: 'trainerId' });
@@ -82,6 +84,9 @@ AttendanceRecord.belongsTo(User, { as: 'User', foreignKey: 'traineeId' });
 ClassroomSession.hasMany(AttendanceRecord, { as: 'attendance', foreignKey: 'sessionId' });
 User.hasMany(AttendanceRecord, { as: 'attendanceRecords', foreignKey: 'traineeId' });
 
+// Notification associations
+Notification.belongsTo(User, { as: 'user', foreignKey: 'userId' });
+
 module.exports = {
   User,
   Course,
@@ -95,5 +100,6 @@ module.exports = {
   CourseStats,
   UserNotes,
   ClassroomSession,
-  AttendanceRecord
-}; 
+  AttendanceRecord,
+  Notification
+};

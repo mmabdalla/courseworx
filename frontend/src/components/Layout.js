@@ -15,7 +15,10 @@ import {
   BanknotesIcon,
   ShoppingCartIcon,
   CalendarDaysIcon,
+  BellIcon,
+  TerminalIcon,
 } from '@heroicons/react/24/outline';
+import NotificationBell from './NotificationBell';
 
 const Layout = () => {
   const { user, logout, isSuperAdmin } = useAuth();
@@ -53,6 +56,7 @@ const Layout = () => {
     ...(isSuperAdmin ? [{ name: 'Plugin Management', href: '/plugin-management', icon: PuzzlePieceIcon }] : []),
     ...(isSuperAdmin ? [{ name: 'Financial Dashboard', href: '/financial-dashboard', icon: CurrencyDollarIcon }] : []),
     ...(isSuperAdmin ? [{ name: 'Currency Management', href: '/admin/currencies', icon: CurrencyDollarIcon }] : []),
+    ...(isSuperAdmin ? [{ name: 'System Logs', href: '/admin/logs', icon: TerminalIcon }] : []),
     ...(user?.role === 'trainer' ? [{ name: 'My Earnings', href: '/trainer/earnings', icon: BanknotesIcon }] : []),
   ];
 
@@ -116,30 +120,38 @@ const Layout = () => {
             </button>
           )}
           
+          {/* Notifications */}
+          <NotificationBell />
+          
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
           
-          <div className="relative user-menu">
+          <div className="relative user-menu pt-1">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform active:scale-95"
             >
-              <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
-                <span className="text-sm font-medium text-white">
-                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                </span>
+              <div className="h-9 w-9 rounded-full bg-primary-600 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-sm font-semibold text-white">
+                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                  </span>
+                )}
               </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-700">
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
-              </div>
-              <ChevronDownIcon className="h-4 w-4 text-gray-400" />
             </button>
 
             {/* Dropdown menu */}
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+              <div className="absolute right-0 mt-3 w-56 rounded-2xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50 overflow-hidden transform transition-all animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize mt-0.5 font-medium tracking-wide">
+                    {user?.role?.replace('_', ' ')}
+                  </p>
+                </div>
                 <div className="py-1" role="menu" aria-orientation="vertical">
                   <a
                     href="/profile"
