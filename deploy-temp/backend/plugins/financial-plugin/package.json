@@ -1,0 +1,106 @@
+{
+  "name": "financial-plugin",
+  "version": "1.0.0",
+  "description": "Financial management plugin for CourseWorx - handles payments, revenue tracking, and payouts",
+  "author": "CourseWorx Team",
+  "license": "MIT",
+  "main": "index.js",
+  "courseworx": {
+    "minVersion": "1.7.0",
+    "permissions": [
+      "read:payments",
+      "write:payments",
+      "read:revenue",
+      "write:revenue",
+      "read:payouts",
+      "write:payouts",
+      "admin:financial",
+      "read:cart",
+      "write:cart",
+      "read:orders",
+      "write:orders",
+      "read:coupons",
+      "write:coupons",
+      "read:invoices",
+      "write:invoices"
+    ],
+    "dependencies": [
+      "stripe",
+      "uuid",
+      "moment"
+    ],
+    "settings": {
+      "stripeApiKey": {
+        "type": "string",
+        "default": "",
+        "required": true,
+        "description": "Stripe API Key for payment processing"
+      },
+      "stripeWebhookSecret": {
+        "type": "string",
+        "default": "",
+        "required": false,
+        "description": "Stripe webhook secret for payment verification"
+      },
+      "payoutSchedule": {
+        "type": "select",
+        "default": "weekly",
+        "options": ["daily", "weekly", "monthly"],
+        "description": "Frequency of automatic payouts to trainers"
+      },
+      "minimumPayoutAmount": {
+        "type": "number",
+        "default": 50,
+        "description": "Minimum amount required for payout (in USD)"
+      },
+      "platformFeePercentage": {
+        "type": "number",
+        "default": 10,
+        "description": "Platform fee percentage (0-100)"
+      },
+      "enableAutomaticPayouts": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable automatic payouts to trainers"
+      },
+      "stripePublishableKey": {
+        "type": "string",
+        "default": "",
+        "required": true,
+        "description": "Stripe publishable key for frontend payment processing"
+      },
+      "currency": {
+        "type": "select",
+        "default": "usd",
+        "options": ["usd", "eur", "gbp", "cad", "aud"],
+        "description": "Default currency for payments"
+      },
+      "cartSessionTimeout": {
+        "type": "number",
+        "default": 24,
+        "description": "Cart session timeout in hours"
+      },
+      "maxCartItems": {
+        "type": "number",
+        "default": 10,
+        "description": "Maximum number of items allowed in cart"
+      },
+      "taxEnabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable tax calculation"
+      },
+      "defaultTaxRate": {
+        "type": "number",
+        "default": 0,
+        "description": "Default tax rate percentage (0-100)"
+      },
+      "couponSystemEnabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable coupon and discount system"
+      }
+    },
+    "autoEnable": true
+  }
+}

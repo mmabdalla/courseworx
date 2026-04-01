@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  TerminalIcon, 
+  CommandLineIcon, 
   TrashIcon, 
-  RefreshIcon, 
+  ArrowPathIcon, 
   ExclamationCircleIcon, 
   InformationCircleIcon 
-} from '@heroicons/react/outline';
+} from '@heroicons/react/24/outline';
 import api from '../services/api';
 
 const AdminLogs = () => {
@@ -60,7 +60,7 @@ const AdminLogs = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <TerminalIcon className="h-8 w-8 text-indigo-500" />
+              <CommandLineIcon className="h-8 w-8 text-indigo-500" />
               System Power Logs
             </h1>
             <p className="text-slate-400 mt-1">Real-time backend audit trail and error monitoring</p>
@@ -80,7 +80,7 @@ const AdminLogs = () => {
               className="p-2 bg-slate-800 text-slate-400 rounded-lg hover:text-white transition-colors"
               title="Manual Refresh"
             >
-              <RefreshIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+              <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button 
               onClick={clearLogs}

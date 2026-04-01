@@ -1,0 +1,7 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+ Software development life cycle workflow is agile and works in the following way:
+ Starts with Feature Requests -> Requirements Analysis -> Impact Analysis -> Decision to implement Code changes -> If YES: Code changes are carried out and new version is made available for testing platform. If NO: We go back to requirements analysis and impact analysis until a GO decision is made. -> Testing New Version. If PASS: Push to version Control (github) Pending Prod deployment. If FAIL: Problems logged in issue tracker for bug fixing until and pushed to Testing New Version again. Once pushed to production -> Feature Requests.

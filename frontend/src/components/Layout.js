@@ -16,7 +16,7 @@ import {
   ShoppingCartIcon,
   CalendarDaysIcon,
   BellIcon,
-  TerminalIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline';
 import NotificationBell from './NotificationBell';
 
@@ -56,7 +56,7 @@ const Layout = () => {
     ...(isSuperAdmin ? [{ name: 'Plugin Management', href: '/plugin-management', icon: PuzzlePieceIcon }] : []),
     ...(isSuperAdmin ? [{ name: 'Financial Dashboard', href: '/financial-dashboard', icon: CurrencyDollarIcon }] : []),
     ...(isSuperAdmin ? [{ name: 'Currency Management', href: '/admin/currencies', icon: CurrencyDollarIcon }] : []),
-    ...(isSuperAdmin ? [{ name: 'System Logs', href: '/admin/logs', icon: TerminalIcon }] : []),
+    ...(isSuperAdmin ? [{ name: 'System Logs', href: '/admin/logs', icon: CommandLineIcon }] : []),
     ...(user?.role === 'trainer' ? [{ name: 'My Earnings', href: '/trainer/earnings', icon: BanknotesIcon }] : []),
   ];
 

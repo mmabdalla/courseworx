@@ -1,12 +1,12 @@
 import React from 'react';
 import { 
-  XIcon, 
+  XMarkIcon, 
   CheckCircleIcon, 
   TrashIcon, 
   InformationCircleIcon, 
   ExclamationCircleIcon,
   CheckIcon
-} from '@heroicons/react/outline';
+} from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import api from '../services/api';
 
@@ -68,7 +68,7 @@ const NotificationDrawer = ({ isOpen, onClose, notifications, onUpdate }) => {
                   onClick={onClose}
                   className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full transition-colors"
                 >
-                  <XIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
               

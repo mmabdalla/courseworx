@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+Always APPEND the file version.txt at the END of each CHANGE to  summarize all actions for upcoming sessions, and to include into context all previous changes.
