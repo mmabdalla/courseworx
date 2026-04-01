@@ -1,17 +1,17 @@
-# CourseWorx Remote Deployment Script - home1
-# Target Host : 10.0.0.10
+# CourseWorx DEV Deployment Script - 7oudalt
+# Target Host : 10.0.0.50
 # Destination : /opt/courseworx
 
 # ---- Configuration ----
 $RemoteUser = "root"
-$RemoteHost = "10.0.0.10"
+$RemoteHost = "10.0.0.50"
 $DestDir = "/opt/courseworx"
 $DbHost = "localhost"
 $DbPort = "5432"
-$DbName = "courseworx"
+$DbName = "courseworx_dev"
 $DbUser = "courseworx"
 $DbPassword = "7ouDa-123q"
-$AppPort = "5000"
+$AppPort = "3050"
 # -----------------------
 
 function Write-ColorOutput {
@@ -26,14 +26,12 @@ $Blue = "Blue"
 $Cyan = "Cyan"
 
 Write-ColorOutput "==================================================" $Cyan
-Write-ColorOutput "  CourseWorx Remote Deployment to $RemoteHost" $Cyan
+Write-ColorOutput "  CourseWorx DEV Deployment to $RemoteHost" $Cyan
 Write-ColorOutput "==================================================" $Cyan
 
-# ------------------------------------------------------------------
 # 1. Prepare local staging directory
-# ------------------------------------------------------------------
-$StagingDir = "deploy-temp"
-$ArchiveName = "deploy-archive.tar.gz"
+$StagingDir = "deploy-temp-dev"
+$ArchiveName = "deploy-archive-dev.tar.gz"
 
 if (Test-Path $StagingDir) { Remove-Item $StagingDir  -Recurse -Force }
 if (Test-Path $ArchiveName) { Remove-Item $ArchiveName -Force }
@@ -49,7 +47,7 @@ $excludePatterns = @(
     "test",
     "screenrecordings",
     "deploy-temp",
-    "deploy-archive.tar.gz"
+    "deploy-dev"
 )
 
 Get-ChildItem -Path "." -Recurse | Where-Object {
@@ -71,9 +69,8 @@ Get-ChildItem -Path "." -Recurse | Where-Object {
         Copy-Item $_.FullName $target -Force
     }
 }
-Write-ColorOutput "Files staged." $Green
 
-Write-ColorOutput "Building React Frontend locally..." $Cyan
+Write-ColorOutput "Building React Frontend for DEV..." $Cyan
 Push-Location "frontend"
 npm run build
 if ($LASTEXITCODE -ne 0) {
@@ -88,13 +85,10 @@ $frontendBuildDest = Join-Path $StagingDir "frontend\build"
 New-Item -ItemType Directory -Path $frontendBuildDest -Force | Out-Null
 Copy-Item "frontend\build\*" $frontendBuildDest -Recurse -Force
 
-
-# ------------------------------------------------------------------
 # 2. Patch environment config in staging copy
-# ------------------------------------------------------------------
 $envPath = Join-Path $StagingDir "backend\.env"
 if (Test-Path $envPath) {
-    Write-ColorOutput "Patching remote environment configuration (.env)..." $Cyan
+    Write-ColorOutput "Patching DEV environment configuration (.env)..." $Cyan
     $envContent = Get-Content $envPath -Raw
     
     $keysToUpdate = @{
@@ -104,8 +98,8 @@ if (Test-Path $envPath) {
         "DB_USER" = $DbUser
         "DB_PASSWORD" = $DbPassword
         "PORT" = $AppPort
-        "NODE_ENV" = "production"
-        "CORS_ORIGIN" = "https://cx.sawa.im"
+        "NODE_ENV" = "development"
+        "CORS_ORIGIN" = "http://10.0.0.50:3050,http://localhost:3050"
     }
 
     foreach ($key in $keysToUpdate.Keys) {
@@ -120,69 +114,22 @@ if (Test-Path $envPath) {
     Set-Content $envPath $envContent
     Write-ColorOutput "Environment config patched." $Green
 }
-else {
-    Write-ColorOutput "WARNING: .env not found at $envPath - ensure pm2 ecosystem handles credentials." $Yellow
-}
 
-# ------------------------------------------------------------------
 # 3. Compress staging directory
-# ------------------------------------------------------------------
 Write-ColorOutput "Compressing staging directory..." $Cyan
 Push-Location $StagingDir
-try {
-    tar -czf "..\$ArchiveName" .
-    if ($LASTEXITCODE -ne 0) { throw "tar failed (exit $LASTEXITCODE)" }
-}
-catch {
-    Write-ColorOutput "ERROR: $_" $Red
-    Pop-Location
-    exit 1
-}
+tar -czf "..\$ArchiveName" .
 Pop-Location
-Write-ColorOutput "Archive created: $ArchiveName" $Green
 
-# ------------------------------------------------------------------
-# 4. Upload archive to remote host
-# ------------------------------------------------------------------
-Write-ColorOutput "Creating remote directory $DestDir ..." $Cyan
+# 4. Upload and Extract
+Write-ColorOutput "Uploading and extracting on $RemoteHost..." $Cyan
 ssh ${RemoteUser}@${RemoteHost} "mkdir -p $DestDir"
-if ($LASTEXITCODE -ne 0) {
-    Write-ColorOutput "ERROR: SSH connection to $RemoteHost failed." $Red
-    exit 1
-}
-
-Write-ColorOutput "Uploading archive via SCP..." $Cyan
 scp $ArchiveName "${RemoteUser}@${RemoteHost}:/tmp/$ArchiveName"
-if ($LASTEXITCODE -ne 0) {
-    Write-ColorOutput "ERROR: SCP upload failed." $Red
-    exit 1
-}
-
-# ------------------------------------------------------------------
-# 5. Extract and install on remote
-# ------------------------------------------------------------------
-Write-ColorOutput "Extracting archive on remote..." $Cyan
 ssh ${RemoteUser}@${RemoteHost} "tar -xzf /tmp/$ArchiveName -C $DestDir && rm /tmp/$ArchiveName"
-if ($LASTEXITCODE -ne 0) {
-    Write-ColorOutput "ERROR: Extraction failed on remote host." $Red
-    exit 1
-}
+ssh ${RemoteUser}@${RemoteHost} "cd $DestDir/backend && npm ci --no-fund --no-audit"
 
-Write-ColorOutput "Installing backend dependencies..." $Cyan
-ssh ${RemoteUser}@${RemoteHost} "cd $DestDir/backend && npm ci --omit=dev --no-fund --no-audit"
-
-
-# ------------------------------------------------------------------
-# 6. Cleanup local temp files
-# ------------------------------------------------------------------
-Write-ColorOutput "Cleaning up local staging files..." $Yellow
+# 5. Cleanup
 Remove-Item $StagingDir  -Recurse -Force
 Remove-Item $ArchiveName -Force
 
-Write-ColorOutput "" $Green
-Write-ColorOutput "==================================================" $Green
-Write-ColorOutput "  Deployment to $RemoteHost COMPLETE!" $Green
-Write-ColorOutput "  App directory : $DestDir" $Green
-Write-ColorOutput "  DB user       : $DbUser @ $DbName" $Green
-Write-ColorOutput "==================================================" $Green
-Write-ColorOutput "NOTE: Start the app on the server (e.g. pm2 restart courseworx)." $Yellow
+Write-ColorOutput "DEV Deployment to $RemoteHost COMPLETE!" $Green

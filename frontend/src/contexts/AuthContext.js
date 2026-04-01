@@ -63,42 +63,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (identifier, password) => {
     try {
-      console.log('🔐 AuthContext: Login attempt started');
-      console.log('📧 Identifier:', identifier);
-      console.log('🔑 Password length:', password.length);
-      console.log('🌐 Current location:', window.location.href);
-      
-      console.log('📡 Calling authAPI.login...');
+      setLoading(true);
       const response = await authAPI.login(identifier, password);
-      console.log('📡 authAPI.login response:', response);
-      
       const { token, user } = response.data;
-      console.log('🔑 Token received:', token ? 'Yes' : 'No');
-      console.log('👤 User data received:', user);
       
       localStorage.setItem('token', token);
-      console.log('💾 Token saved to localStorage');
       
       // Set user state after a brief delay to prevent immediate redirect
       setTimeout(() => {
-        console.log('👤 Setting user state...');
         setUser(user);
       }, 50);
       
       toast.success('Login successful!');
-      console.log('✅ Login completed successfully');
       return { success: true };
     } catch (error) {
-      console.error('💥 AuthContext: Login error occurred');
-      console.error('💥 Error object:', error);
-      console.error('💥 Error response:', error.response);
-      console.error('💥 Error response data:', error.response?.data);
-      console.error('💥 Error response status:', error.response?.status);
-      console.error('💥 Error message:', error.message);
-      
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
       return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -134,11 +117,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (userData) => {
-    console.log('updateUser called with:', userData);
     setUser(userData);
     // If we have a user, setup is no longer required
     if (userData) {
-      console.log('Setting setupRequired to false');
       setSetupRequired(false);
     }
   };

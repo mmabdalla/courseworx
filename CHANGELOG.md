@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.8] - 2026-04-01
+### Added
+- Created `deploy-dev.ps1`: Dedicated deployment script for local development environment (`10.0.0.50`).
+
+### Changed
+- Production Networking: Refactored API connectivity to use relative paths (`/api`). This ensures compatibility with Nginx reverse proxies and SSL (HTTPS) without exposing backend ports publicly.
+- Deployment Hardening: Updated `deploy-home1.ps1` to handle environment-specific configuration more robustly.
+
+### Fixed
+- Onboarding Redirect: Fixed issue where production environments failed to redirect to the `/setup` page when the database was empty.
+- UI Sanitization: Removed all development-time debug information, DOM-testing code, and hardcoded test buttons from the Login page.
+
 ## [2.0.7] - 2026-04-01
 ### Added
 - Universal Role-based Notification System:

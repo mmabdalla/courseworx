@@ -56,15 +56,17 @@ const corsOptions = {
     const allowedFromConfig = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [];
     const serverIP = process.env.SERVER_IP || '10.0.0.50';
     
+    // Core allowed origins
     const allowedOrigins = [
       'http://localhost:3050',
       'http://127.0.0.1:3050',
       `http://${serverIP}:3050`,
+      'https://cx.sawa.im',
       ...allowedFromConfig
     ];
     
-    // Dynamic network IP matching (10.0.0.x range)
-    if (origin.match(/^http:\/\/10\.0\.0\.\d+:3050$/)) {
+    // Dynamic network IP matching (10.0.0.x range) or sawa.im subdomains
+    if (origin.match(/^http:\/\/10\.0\.0\.\d+:3050$/) || origin.endsWith('.sawa.im')) {
       return callback(null, true);
     }
     

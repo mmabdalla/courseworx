@@ -8,14 +8,14 @@ const getApiBaseUrl = () => {
   // Use the port from env or default to 5000
   const backendPort = 5000;
 
-  // If we're on localhost, use localhost for backend
+  // If we're on localhost, use localhost with port for backend
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return `${protocol}//${hostname}:${backendPort}/api`;
   }
   
-  // Use configured server IP from env if available, otherwise fallback to current hostname
-  const serverIP = process.env.REACT_APP_SERVER_IP || hostname;
-  return `${protocol}//${serverIP}:${backendPort}/api`;
+  // In production/proxied environments, use a relative path.
+  // This lets the browser handle protocol, hostname, and any path-based proxying (like Nginx).
+  return '/api';
 };
 
 // Create axios instance with dynamic base URL
